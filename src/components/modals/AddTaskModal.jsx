@@ -88,6 +88,8 @@ export default function AddTaskModal({
   //   getProjectUsers();
   // }, []);
 
+console.log(devUsers)
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
@@ -156,7 +158,7 @@ export default function AddTaskModal({
               >
                 <option value="">Unassigned</option>
                 {devUsers.map((u) => (
-                  <option key={u.id} value={u.user_id ?? u.id}>
+                  <option key={u.userId} value={u.userId ?? u.userId}>
                     {u.name}
                   </option>
                 ))}
@@ -174,7 +176,7 @@ export default function AddTaskModal({
               >
                 <option value="">Unassigned</option>
                 {qaUsers.map((u) => (
-                  <option key={u.id} value={u.user_id ?? u.id}>
+                  <option key={u.userId} value={u.userId ?? u.userId}>
                     {u.name}
                   </option>
                 ))}

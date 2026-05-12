@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FolderKanban, LayoutGrid, Users, BarChart2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
-import { loginUser } from "../../services/api";
+import { loginUser } from "../../services/api3";
 
 const features = [
   { icon: LayoutGrid, label: "Kanban Boards",    desc: "Drag-and-drop task flows",   accent: "#3b82f6" },

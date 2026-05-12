@@ -29,7 +29,6 @@ function normaliseSubtasks(subtasks) {
 export default function TaskDetailModal({
   task,
   users = [],
-  projectUsers = [],
   severities = [],
   statuses = [],
   onUpdate,
@@ -77,21 +76,9 @@ export default function TaskDetailModal({
 
   const isQAPhase = task.phaseGrouping === "qa";
   const missingQA = isQAPhase && !task.qaAssigneeId;
-
-  // Filter by role — prefer project-scoped list, fall back to full users list
-  const devUsers =
-    projectUsers.length > 0
-      ? projectUsers.filter((u) => u.role === "Developer")
-      : users.filter((u) => u.role === "Developer");
-
-  const qaUsers =
-    projectUsers.length > 0
-      ? projectUsers.filter((u) => u.role === "QA")
-      : users.filter((u) => u.role === "QA");
+  const qaUsers = users.filter((u) => u.role === "QA");
 
   const setField = (k, v) => setEditForm((prev) => ({ ...prev, [k]: v }));
-
-  console.log(editForm)
 
   // ── Edit save ─────────────────────────────────────────────────────────────
   const handleSaveEdit = async () => {
@@ -470,7 +457,7 @@ export default function TaskDetailModal({
                   {/* Dev assignee */}
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                      Dev Assignee
+                      Assignee
                     </p>
                     <div className="flex items-center gap-2">
                       <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold text-[10px]">
@@ -568,7 +555,6 @@ export default function TaskDetailModal({
                       <span className="text-sm text-gray-400">—</span>
                     )}
                   </div>
-
                   {task.mandays != null && (
                     <div className="space-y-0.5">
                       <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
@@ -602,7 +588,7 @@ export default function TaskDetailModal({
                   {/* Dev assignee */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Dev Assignee
+                      Assignee
                     </label>
                     <select
                       value={editForm.assigneeId}
@@ -610,9 +596,9 @@ export default function TaskDetailModal({
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 bg-white"
                     >
                       <option value="">Unassigned</option>
-                      {devUsers.map((u) => (
-                        <option key={u.userId} value={u.userId ?? u.userId}>
-                          {u.name}
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} ({u.role})
                         </option>
                       ))}
                     </select>
@@ -630,7 +616,7 @@ export default function TaskDetailModal({
                     >
                       <option value="">Unassigned</option>
                       {qaUsers.map((u) => (
-                        <option key={u.userId} value={u.userId ?? u.userId}>
+                        <option key={u.id} value={u.id}>
                           {u.name}
                         </option>
                       ))}
@@ -756,58 +742,55 @@ export default function TaskDetailModal({
 
             {/* ── 4. Attachments ── */}
             <div className="border-b border-gray-100">
-              <FileUpload taskId={task.id} isPM={isPM} />
+              <FileUpload taskId={task.id} />
             </div>
 
             {/* ── 5. Footer: delete ── */}
-            {isPM && (
-              <div className="px-6 py-4">
-                {!confirmingDelete ? (
+            <div className="px-6 py-4">
+              {!confirmingDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="flex items-center gap-1 text-sm text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                >
+                  <Trash2 size={16} />
+                  Delete this task
+                </button>
+              ) : (
+                <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <svg
+                    className="w-4 h-4 text-red-400 shrink-0"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 3.5v3m0 2h.01" />
+                  </svg>
+                  <span className="flex-1 text-sm text-red-700">
+                    Delete <strong>{task.title}</strong>? This cannot be undone.
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setConfirmingDelete(true)}
-                    className="flex items-center gap-1 text-sm text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleting}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
                   >
-                    <Trash2 size={16} />
-                    Delete this task
+                    Cancel
                   </button>
-                ) : (
-                  <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                    <svg
-                      className="w-4 h-4 text-red-400 shrink-0"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 3.5v3m0 2h.01" />
-                    </svg>
-                    <span className="flex-1 text-sm text-red-700">
-                      Delete <strong>{task.title}</strong>? This cannot be
-                      undone.
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingDelete(false)}
-                      disabled={deleting}
-                      className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDeleteTask}
-                      disabled={deleting}
-                      className="px-3 py-1.5 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 shrink-0 cursor-pointer"
-                    >
-                      {deleting ? "Deleting…" : "Yes, delete"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                  <button
+                    type="button"
+                    onClick={handleDeleteTask}
+                    disabled={deleting}
+                    className="px-3 py-1.5 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 shrink-0 cursor-pointer"
+                  >
+                    {deleting ? "Deleting…" : "Yes, delete"}
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -871,9 +854,7 @@ export default function TaskDetailModal({
                         {c.commenterName ?? c.commenterUsername ?? "Unknown"}
                       </span>
                       <span className="text-[10px] text-gray-400 shrink-0">
-                        {new Date(c.commentDate).toLocaleDateString("en-PH", {
-                          month: "short",
-                          day: "numeric",
+                        {new Date(c.comment_date).toLocaleDateString("en-PH", {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}

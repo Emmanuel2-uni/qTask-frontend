@@ -16,6 +16,7 @@ import {
   deleteProject,
 } from "../../services/api";
 import { ProjectFormModal, DeleteConfirmModal } from "../modals/ProjectModal";
+
 const ACTION_COLORS = {
   blue: "text-blue-400 hover:text-blue-600 hover:bg-blue-50",
   red: "text-red-400 hover:text-red-600 hover:bg-red-50",
@@ -93,7 +94,6 @@ export default function ProjectsPage({ users }) {
   const [addModal, setAddModal] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [editKey, setEditKey] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -131,7 +131,6 @@ export default function ProjectsPage({ users }) {
       setProjects((prev) =>
         prev.map((p) => (p.id === updated.id ? updated : p)),
       );
-      setEditKey((k) => k + 1); // added key
       window.dispatchEvent(new Event("projects-updated"));
     },
     [editTarget],
@@ -394,7 +393,7 @@ export default function ProjectsPage({ users }) {
                           <ActionButton
                             icon={<Pencil size={14} />}
                             label="Edit"
-                            onClick={() => {setEditTarget(project); setEditKey((k) => k + 1); }}
+                            onClick={() => setEditTarget(project)}
                             color="blue"
                           />
                           <ActionButton
@@ -425,11 +424,10 @@ export default function ProjectsPage({ users }) {
       )}
       {editTarget && (
         <ProjectFormModal
-          key={editKey}
           project={editTarget}
           users={users}
           onSave={handleEdit}
-          onClose={() => { setEditTarget(null); setEditKey((k) => k + 1); }}
+          onClose={() => setEditTarget(null)}
         />
       )}
       {deleteTarget && (

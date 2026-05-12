@@ -192,7 +192,7 @@ export default function DashboardPage({ onNavigate }) {
     activeUsers: 0,
   });
   const [atRiskProjects, setAtRiskProjects] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
+  const [recentActivity, setRecentActivity] = useState({ data: [], total: 0 });
   const [loading, setLoading] = useState(true);
   const [fadeIn, setFadeIn] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -437,7 +437,7 @@ export default function DashboardPage({ onNavigate }) {
         </SectionCard>
         {/* Recent Activity - Takes up more vertical space now */}
         <SectionCard title="Recent Activity" icon="📋" className="h-full">
-          {recentActivity.data.length === 0 ? (
+          {(recentActivity.data?.length ?? 0) === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
               <Activity size={40} className="text-slate-300 mb-3" />
               <p className="text-slate-800 font-semibold">No recent activity</p>
@@ -447,7 +447,7 @@ export default function DashboardPage({ onNavigate }) {
             </div>
           ) : (
             <div className="overflow-y-auto flex-1 -mx-2 px-2 pr-3">
-              {recentActivity.data.map((activity) => (
+              {recentActivity.data?.map((activity) => (
                 <ActivityItem key={activity.id} activity={activity} />
               ))}
             </div>

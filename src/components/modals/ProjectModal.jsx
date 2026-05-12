@@ -79,10 +79,10 @@ export function ProjectFormModal({ project, users, onSave, onClose }) {
       .then((members) => {
         const devIds = members
           .filter((m) => m.role === "Developer")
-          .map((m) => m.user_id);
+          .map((m) => m.userId);
         const qaIds = members
           .filter((m) => m.role === "QA")
-          .map((m) => m.user_id);
+          .map((m) => m.userId);
         setForm((prev) => ({ ...prev, developers: devIds, qas: qaIds }));
       })
       .catch((err) =>
@@ -109,7 +109,7 @@ export function ProjectFormModal({ project, users, onSave, onClose }) {
         clientName: form.clientName.trim() || null,
         targetEndDate: form.targetEndDate || null,
         status: form.status, // <-- Pass Status to API
-        devs: form.developers, // Pass selected developer IDs
+        developers: form.developers, // Pass selected developer IDs
         qas: form.qas, // Pass selected QA IDs
       });
       onClose();

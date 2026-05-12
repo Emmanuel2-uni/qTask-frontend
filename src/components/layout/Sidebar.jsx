@@ -60,7 +60,7 @@ export default function Sidebar({
         <FolderKanban size={22} className="shrink-0" style={{ color: "#3b82f6" }} />
         {!collapsed && (
           <span className="text-base font-black truncate tracking-tight" style={{ color: "#fff" }}>
-            QTask
+            qTask
           </span>
         )}
       </div>

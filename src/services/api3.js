@@ -57,11 +57,7 @@ export const deleteSeverity = (id) => request("DELETE", `/severities/${id}`);
 // ── Users ─────────────────────────────────────────────────────
 export const fetchUsers = () => request("GET", "/users");
 
-// ── GET SPECIFIC Users assigned to project ─────────────────────────────────────────────────────
-export const fetchProjectUsers = (id) => request("GET", `/users/project/${id}`);
-
 // ── Projects ──────────────────────────────────────────────────
-export const fetchMyProjects = () => request("GET", "/projects/my");
 export const fetchProjects = () => request("GET", "/projects");
 export const createProject = (payload) => request("POST", "/projects", payload);
 export const updateProject = (id, payload) =>
@@ -75,22 +71,11 @@ export const fetchTasks = (projectId, assignedUserId, grouping) => {
   if (assignedUserId) params.append("assignedUserId", assignedUserId);
   if (grouping) params.append("grouping", grouping);
   const query = params.toString();
-
   return request("GET", `/tasks${query ? `?${query}` : ""}`);
 };
 
 // ── Tasks ─────────────────────────────────────────────────────
 export const createTask = (payload) => request("POST", "/tasks", payload);
-
-// ── Subtasks Comments ─────────────────────────────────────────────────────
-export const fetchSubtaskComments = (subtaskId) =>
-  request("GET", `/subtask-comments/${subtaskId}`);
-
-export const createSubtaskComment = (subtaskId, comment) =>
-  request("POST", `/subtask-comments/${subtaskId}`, { comment });
-
-export const deleteSubtaskComment = (subtaskId) =>
-  request("DELETE", `/subtask-comments/${subtaskId}`);
 
 // ── Activity Logs ─────────────────────────────────────────────
 export const fetchActivityLogs = (filters = {}) => {
