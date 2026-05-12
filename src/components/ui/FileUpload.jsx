@@ -246,7 +246,7 @@ export default function FileUpload({ taskId, isPM }) {
             const ext = fileExtension(att.originalName);
             const color = extColor(ext);
             const isImg = att.mimeType?.startsWith("image/");
-            const previewUrl = `${process.env.VITE_API_URL}/uploads/${taskId}/${att.storedName}`;
+            const previewUrl = `${import.meta.env.VITE_API_URL}/uploads/${taskId}/${att.storedName}`;
             const dlUrl = attachmentDownloadUrl(taskId, att.id);
             const isDeleting = deletingId === att.id;
 
