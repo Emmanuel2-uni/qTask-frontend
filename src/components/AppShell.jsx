@@ -673,6 +673,7 @@ export default function AppShell({ currentUser, logout }) {
                 setActivePage("users");
               }
             }}
+            currentUser={currentUser}
           />
         );
 

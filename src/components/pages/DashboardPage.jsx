@@ -179,7 +179,7 @@ function AtRiskProjectCard({ project, onClick }) {
 }
 
 // Main Dashboard Component
-export default function DashboardPage({ onNavigate }) {
+export default function DashboardPage({ onNavigate, currentUser }) {
   const [stats, setStats] = useState({
     totalProjects: 0,
     activeProjects: 0,
@@ -329,20 +329,24 @@ export default function DashboardPage({ onNavigate }) {
 
         {/* Actions moved to the top for immediate access */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => onNavigate?.("projects", "create")}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
-          >
-            <Plus size={14} />
-            New Project
-          </button>
-          <button
-            onClick={() => onNavigate?.("users", "create")}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition hidden sm:flex"
-          >
-            <UserPlus size={14} />
-            Add Member
-          </button>
+          {currentUser?.role !== "ProjectManager" && (
+            <>
+              <button
+                onClick={() => onNavigate?.("projects", "create")}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
+              >
+                <Plus size={14} />
+                New Project
+              </button>
+              <button
+                onClick={() => onNavigate?.("users", "create")}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition hidden sm:flex"
+              >
+                <UserPlus size={14} />
+                Add Member
+              </button>
+            </>
+          )}
           <button
             onClick={loadDashboardData}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all"
