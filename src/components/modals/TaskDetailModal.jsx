@@ -51,6 +51,8 @@ export default function TaskDetailModal({
   const [postingComment, setPostingComment] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [editForm, setEditForm] = useState({
+    title: task.title ?? task.name ?? "",
+    description: task.description ?? "",
     assigneeId: task.assigneeId ?? "",
     qaAssigneeId: task.qaAssigneeId ?? "",
     severityId: task.severityId ?? "",
@@ -105,8 +107,8 @@ export default function TaskDetailModal({
 
     try {
       await onEdit(task.id, {
-        title: task.title,
-        description: task.description,
+        title: editForm.title,
+        description: editForm.description,
         assigneeId: editForm.assigneeId ? Number(editForm.assigneeId) : null,
         qaAssigneeId: editForm.qaAssigneeId
           ? Number(editForm.qaAssigneeId)
@@ -595,9 +597,36 @@ export default function TaskDetailModal({
                 /* EDIT mode */
                 <div className="space-y-3">
                   <p className="text-xs text-blue-600 font-medium">
-                    Editing assignee, QA assignee, severity, status and target
-                    date
+                    Editing task details
                   </p>
+
+                  {/* Title */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.title}
+                      onChange={(e) => setField("title", e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                      placeholder="Task title"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Description
+                    </label>
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => setField("description", e.target.value)}
+                      rows={3}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 resize-none"
+                      placeholder="Task description (optional)"
+                    />
+                  </div>
 
                   {/* Dev assignee */}
                   <div className="space-y-1">
