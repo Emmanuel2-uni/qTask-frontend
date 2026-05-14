@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, SlidersHorizontal, X } from "lucide-react";
+import { fetchProjectUsers } from "../../services/api";
 
 /**
  * KanbanHeader
@@ -36,8 +37,26 @@ export default function KanbanHeader({
 }) {
   const [showFilters, setShowFilters] = useState(false);
 
+  // -- Project-scoped users for the Dev filter --------------------
+  const [projectUsers, setProjectUsers] = useState([]);
+
+  useEffect(() => {
+    if (!activeProject?.id) {
+      setProjectUsers([]);
+      return;
+    }
+    fetchProjectUsers(activeProject.id)
+      .then((data) =>
+        // ProjectUserGetDto shape: { id, projectId, userId, role, userName }
+        setProjectUsers(data.map((pu) => ({ id: pu.userId, name: pu.name })))
+      )
+      .catch(() => setProjectUsers([]));
+  }, [activeProject?.id]);
   const hasActiveFilters =
     filters.userId || filters.severityId || filters.statusId;
+
+  // --------------------------------------------------------
+
 
   return (
     <div className="mb-6 space-y-3">
@@ -149,7 +168,7 @@ export default function KanbanHeader({
               className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
             >
               <option value="">All users</option>
-              {users.map((u) => (
+              {projectUsers.map((u) => ( // changed users.map => projectUsers.map
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>

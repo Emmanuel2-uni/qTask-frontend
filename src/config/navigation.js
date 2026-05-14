@@ -31,7 +31,9 @@ const NAV_ITEMS = {
   ],
 
   ProjectManager: [
+    { key: "dashboard",       label: "Dashboard",       icon: LayoutDashboard },
     { key: "overview",        label: "Overview",        icon: LayoutDashboard },
+    { key: "analytics",       label: "Analytics",       icon: BarChart2       },
     { key: "tasks",           label: "All Tasks",       icon: ListTodo        },
     { key: "logs",            label: "Activity Log",    icon: ActivitySquare  },
   ],
