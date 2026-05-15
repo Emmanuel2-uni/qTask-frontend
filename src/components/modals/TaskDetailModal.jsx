@@ -198,13 +198,11 @@ export default function TaskDetailModal({
     if (saved) setLocalSubtasks(normaliseSubtasks(saved));
   };
 
-  const handleAddSubtask = async (e) => {
-    console.log(localSubtasks);
-    e.preventDefault();
+  const handleAddSubtask = async () => {
     if (!newSubtaskTitle.trim()) return;
     const updated = [
       ...localSubtasks,
-      { id: uid(), title: newSubtaskTitle.trim(), isDone: false },
+      { id: 0, title: newSubtaskTitle.trim(), isDone: false }, // removed uid, instead added backend check for id 0
       // { title: newSubtaskTitle.trim(), isDone: false },
     ];
     setLocalSubtasks(updated);
@@ -515,21 +513,29 @@ export default function TaskDetailModal({
             )}
 
             {/* Add subtask form */}
-            <form onSubmit={handleAddSubtask} className="flex gap-2 pt-1">
-              <input
+            <div className="flex gap-2 pt-1">
+              <textarea
                 value={newSubtaskTitle}
                 onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                placeholder="Add a subtask…"
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+                placeholder="Add a subtask… (Shift+Enter for new line)"
+                rows={1}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400 resize-none"
               />
               <button
-                type="submit"
+                type="button"
+                onClick={handleAddSubtask}
                 disabled={!newSubtaskTitle.trim()}
                 className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               >
                 Add
               </button>
-            </form>
+            </div>
           </div>
         ) : (
           /* ══════════════════════════════════════════════════════════════════
@@ -1031,14 +1037,18 @@ export default function TaskDetailModal({
 
           {/* Input */}
           <div className="flex gap-2 px-4 py-3 border-t border-gray-100 shrink-0">
-            <input
+            <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && !e.shiftKey && handlePostComment()
-              }
-              placeholder="Write a comment…"
-              className="flex-1 border border-gray-200 rounded-lg h-8 px-3 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handlePostComment();
+                }
+              }}
+              placeholder="Write a comment… (Shift+Enter for new line)"
+              rows={1}
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400 resize-none"
               disabled={postingComment}
             />
             <button
