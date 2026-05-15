@@ -156,6 +156,38 @@ export default function TaskDetailModal({
     }
   };
 
+
+    // ── Inline status change (view mode) ─────────────────────────────────────
+  const [statusSaving, setStatusSaving] = useState(false);
+ 
+  const handleStatusChange = async (newStatusId) => {
+    const matchedStatus = statuses.find(
+      (s) => String(s.id) === String(newStatusId),
+    );
+    setField("statusId", newStatusId);
+    setStatusSaving(true);
+    try {
+      await onEdit(task.id, {
+        title: editForm.title,
+        description: editForm.description,
+        assigneeId: editForm.assigneeId ? Number(editForm.assigneeId) : null,
+        qaAssigneeId: editForm.qaAssigneeId ? Number(editForm.qaAssigneeId) : null,
+        severityId: editForm.severityId ? Number(editForm.severityId) : null,
+        statusId: newStatusId ? Number(newStatusId) : null,
+        targetDate: editForm.targetDate || null,
+        statusLabel: matchedStatus?.label ?? task.statusLabel,
+        statusColor: matchedStatus?.color ?? task.statusColor,
+      });
+      if (matchedStatus) {
+        setLocalStatus({ label: matchedStatus.label, color: matchedStatus.color });
+      }
+    } finally {
+      setStatusSaving(false);
+    }
+  };
+
+
+
   // ── Subtask handlers ──────────────────────────────────────────────────────
   const handleToggleSubtask = async (subtaskId) => {
     const updated = localSubtasks.map((s) =>
@@ -594,37 +626,40 @@ export default function TaskDetailModal({
                     </span>
                   </div>
 
-                  {/* Status — uses localStatus for instant feedback */}
+                   {/* Status — inline editable dropdown (no edit mode needed) */}
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                       Status
                     </p>
-                    {localStatus.label ? (
+                    <div className="flex items-center gap-1.5">
                       <span
-                        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
                         style={{
-                          color: localStatus.color,
-                          background: `${localStatus.color}18`,
-                          border: `1px solid ${localStatus.color}30`,
-                          transition:
-                            "color 0.2s ease, background 0.2s ease, border-color 0.2s ease",
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                          background: localStatus.color ?? "#94a3b8",
+                          border: "1px solid rgba(0,0,0,0.1)",
+                          transition: "background 0.2s ease",
+                          opacity: statusSaving ? 0.5 : 1,
+                          display: "inline-block",
                         }}
+                      />
+                      <select
+                        value={editForm.statusId}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        disabled={statusSaving}
+                        className="flex-1 text-xs font-semibold border border-transparent hover:border-gray-200 focus:border-blue-400 rounded-lg px-2 py-1 bg-transparent focus:bg-white focus:outline-none transition cursor-pointer disabled:opacity-50"
+                        style={{ color: "#374151" }} // Default the color to black for readability
                       >
-                        <span
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            background: localStatus.color,
-                            flexShrink: 0,
-                            display: "inline-block",
-                          }}
-                        />
-                        {localStatus.label}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-400">—</span>
-                    )}
+                        <option value="">— None —</option>
+                        {statuses.map((st) => (
+                          <option key={st.id} value={st.id}>
+                            {st.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   {task.mandays != null && (
