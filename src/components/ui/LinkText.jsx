@@ -8,21 +8,16 @@ export default function LinkText({ text, className }) {
   return (
     <span className={className}>
       {parts.map((part, i) =>
-        URL_REGEX.test(part) ? (
-          
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline hover:text-blue-700 break-all"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {part}
-          </a>
-        ) : (
-          part
-        ),
-      )}
+            /^https?:\/\/[^\s<>"']+$/.test(part) ? (
+                <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+                className="text-blue-500 underline hover:text-blue-700 break-all"
+                onClick={(e) => e.stopPropagation()}>
+                {part}
+                </a>
+            ) : (
+                part
+            ),
+            )}
     </span>
   );
 }

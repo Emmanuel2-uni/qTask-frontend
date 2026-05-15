@@ -19,6 +19,7 @@ import {
   createSubtaskComment,
   deleteSubtaskComment,
 } from "../../services/api";
+import LinkText from "../ui/LinkText";
 
 function normaliseSubtasks(subtasks) {
   return (subtasks ?? []).map((s) => ({
@@ -447,7 +448,7 @@ export default function TaskDetailModal({
                               subtask.isDone ? "line-through text-gray-400" : "text-gray-700"
                             }`}
                           >
-                            {subtask.title}
+                            <LinkText text={subtask.title} />
                           </span>
                           <button
                             type="button"
@@ -506,8 +507,8 @@ export default function TaskDetailModal({
             {/* ── 2. Details ── */}
             <div className="p-6 space-y-4 border-b border-gray-100">
               {task.description && !editMode && (
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {task.description}
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  <LinkText text={task.description} />
                 </p>
               )}
 
@@ -964,7 +965,7 @@ export default function TaskDetailModal({
                       </span>
                     </div>
                     <p className="text-sm text-gray-700 wrap-break-words whitespace-pre-wrap mt-0.5">
-                      {c.comment}
+                      <LinkText text={c.comment} />
                     </p>
                     <button
                       type="button"
