@@ -15,6 +15,7 @@ import {
 import FileUpload from "../ui/FileUpload";
 import {
   fetchSubtaskComments,
+  fetchSubtaskCommentCounts,
   createSubtaskComment,
   deleteSubtaskComment,
 } from "../../services/api";
@@ -62,6 +63,24 @@ export default function TaskDetailModal({
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // -- Close using ESC button -----------------------------------------
+  useEffect(() => {
+    const handleKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+ // ── Comment counts (subtaskId → number) ──────────────────────────────────
+  const [commentCounts, setCommentCounts] = useState({});
+  useEffect(() => {
+    const ids = localSubtasks.map((s) => s.id).filter((id) => id > 0);
+    if (ids.length === 0) return;
+    fetchSubtaskCommentCounts(ids)
+      .then(setCommentCounts)
+      .catch(() => {}); // non-critical, badge simply won't show
+  }, [localSubtasks]);
+
 
   // ── Optimistic local status for the modal's own status pill ──────────────
   const [localStatus, setLocalStatus] = useState({
@@ -179,6 +198,8 @@ export default function TaskDetailModal({
     }
   };
 
+  const [confirmUntickId, setConfirmUntickId] = useState(null);
+
   // const handleBackdropClick = (e) => {
   //   if (e.target === e.currentTarget) onClose();
   // };
@@ -215,6 +236,7 @@ export default function TaskDetailModal({
         newComment.trim(),
       );
       setSubtaskComments((prev) => [...prev, created]);
+      setCommentCounts((prev) => ({ ...prev, [activeSubtaskId]: (prev[activeSubtaskId] ?? 0) + 1 }));
       setNewComment("");
     } catch (err) {
       console.error("Failed to post comment:", err.message);
@@ -228,6 +250,7 @@ export default function TaskDetailModal({
     try {
       await deleteSubtaskComment(commentId);
       setSubtaskComments((prev) => prev.filter((c) => c.id !== commentId));
+       setCommentCounts((prev) => ({ ...prev, [activeSubtaskId]: Math.max(0, (prev[activeSubtaskId] ?? 1) - 1) }));
     } catch (err) {
       console.error("Failed to delete comment:", err.message);
     }
@@ -363,66 +386,98 @@ export default function TaskDetailModal({
             ) : (
               <ul className="space-y-2">
                 {localSubtasks.map((subtask) => (
-                  <li
-                    key={subtask.id}
-                    className="flex items-center gap-3 group"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleToggleSubtask(subtask.id)}
-                      className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors cursor-pointer ${
-                        subtask.isDone
-                          ? "bg-emerald-500 border-emerald-500"
-                          : "border-gray-300 hover:border-blue-400"
-                      }`}
-                    >
-                      {subtask.isDone && (
-                        <svg
-                          className="w-3 h-3 text-white"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                        >
-                          <path
-                            d="M2 6l3 3 5-5"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                    <li key={subtask.id}>
+                      {confirmUntickId === subtask.id ? (
+                        /* ── Untick confirmation strip ── */
+                        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                          <AlertTriangle size={14} className="text-amber-400 shrink-0" />
+                          <span className="flex-1 text-sm text-amber-800">
+                            Mark <strong>{subtask.title}</strong> as incomplete?
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmUntickId(null)}
+                            className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmUntickId(null);
+                              handleToggleSubtask(subtask.id);
+                            }}
+                            className="px-3 py-1 text-sm font-semibold bg-amber-400 text-white rounded-lg hover:bg-amber-500 transition shrink-0 cursor-pointer"
+                          >
+                            Yes, undo
+                          </button>
+                        </div>
+                      ) : (
+                        /* ── Normal subtask row ── */
+                        <div className="flex items-center gap-3 group">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (subtask.isDone) {
+                                setConfirmUntickId(subtask.id);
+                              } else {
+                                handleToggleSubtask(subtask.id);
+                              }
+                            }}
+                            className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors cursor-pointer ${
+                              subtask.isDone
+                                ? "bg-emerald-500 border-emerald-500"
+                                : "border-gray-300 hover:border-blue-400"
+                            }`}
+                          >
+                            {subtask.isDone && (
+                              <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                                <path
+                                  d="M2 6l3 3 5-5"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                          <span
+                            className={`flex-1 text-sm transition-colors ${
+                              subtask.isDone ? "line-through text-gray-400" : "text-gray-700"
+                            }`}
+                          >
+                            {subtask.title}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => openCommentPanel(subtask)}
+                            className={`transition-colors text-sm leading-none shrink-0 cursor-pointer ${
+                              activeSubtaskId === subtask.id && commentPanel
+                                ? "text-green-500"
+                                : "text-gray-500 hover:text-green-400"
+                            }`}
+                            title="Comments"
+                          >
+                            <MessageCircleMore size={14} />
+                              {(commentCounts[subtask.id] ?? 0) > 0 && (
+                                <span className="text-[10px] font-semibold leading-none">
+                                  {commentCounts[subtask.id]}
+                                </span>
+                              )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSubtask(subtask.id)}
+                            className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       )}
-                    </button>
-                    <span
-                      className={`flex-1 text-sm transition-colors ${
-                        subtask.isDone
-                          ? "line-through text-gray-400"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      {subtask.title}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => openCommentPanel(subtask)}
-                      className={`transition-colors text-sm leading-none shrink-0 cursor-pointer ${
-                        activeSubtaskId === subtask.id && commentPanel
-                          ? "text-green-500"
-                          : "text-gray-500 hover:text-green-400"
-                      }`}
-                      title="Comments"
-                    >
-                      <MessageCircleMore size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSubtask(subtask.id)}
-                      className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
-                      title="Delete"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </li>
-                ))}
+                    </li>
+                  ))}
               </ul>
             )}
 

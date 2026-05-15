@@ -86,6 +86,9 @@ export const createTask = (payload) => request("POST", "/tasks", payload);
 export const fetchSubtaskComments = (subtaskId) =>
   request("GET", `/subtask-comments/${subtaskId}`);
 
+export const fetchSubtaskCommentCounts = (subtaskIds) =>
+  request("GET", `/subtask-comments/counts?subtaskIds=${subtaskIds.join(",")}`);
+
 export const createSubtaskComment = (subtaskId, comment) =>
   request("POST", `/subtask-comments/${subtaskId}`, { comment });
 
