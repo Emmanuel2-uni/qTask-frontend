@@ -18,6 +18,7 @@ import {
   fetchSubtaskCommentCounts,
   createSubtaskComment,
   deleteSubtaskComment,
+  updateSubtaskComment, 
   updateTaskProgress,
 } from "../../services/api";
 import LinkText from "../ui/LinkText";
@@ -242,6 +243,8 @@ export default function TaskDetailModal({
   };
 
   const [confirmUntickId, setConfirmUntickId] = useState(null);
+  const [confirmDeleteSubtaskId, setConfirmDeleteSubtaskId] = useState(null);
+  const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState(null);
 
   // ── No-subtask progress toggle (0 ↔ 100) ────────────────────────────────
   const [progressSaving, setProgressSaving] = useState(false);
@@ -314,6 +317,34 @@ export default function TaskDetailModal({
       console.error("Failed to delete comment:", err.message);
     }
   };
+
+  // ── Current logged-in user (for ownership check) ─────────────────────────
+const currentUser = JSON.parse(localStorage.getItem("qtask_user") ?? "null");
+
+// ── Comment edit state ────────────────────────────────────────────────────
+const [editingCommentId, setEditingCommentId]   = useState(null);
+const [editingCommentText, setEditingCommentText] = useState("");
+const [savingCommentEdit, setSavingCommentEdit]  = useState(false);
+
+const handleEditComment = async (commentId) => {
+  if (!editingCommentText.trim()) return;
+  setSavingCommentEdit(true);
+  try {
+    await updateSubtaskComment(commentId, editingCommentText.trim());
+    // Patch local state — no refetch needed
+    setSubtaskComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId ? { ...c, comment: editingCommentText.trim() } : c
+      )
+    );
+    setEditingCommentId(null);
+    setEditingCommentText("");
+  } catch (err) {
+    console.error("Failed to edit comment:", err.message);
+  } finally {
+    setSavingCommentEdit(false);
+  }
+};
 
   // ── Shared header used in both views ─────────────────────────────────────
   const renderHeader = () => (
@@ -471,7 +502,24 @@ export default function TaskDetailModal({
                             Yes, undo
                           </button>
                         </div>
-                      ) : (
+                      ) : confirmDeleteSubtaskId === subtask.id ? (
+                          /* ── Delete confirmation strip ── */
+                          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                            <AlertTriangle size={14} className="text-red-400 shrink-0" />
+                            <span className="flex-1 text-sm text-red-800">
+                              Delete <strong>{subtask.title}</strong>? This cannot be undone.
+                            </span>
+                            <button type="button" onClick={() => setConfirmDeleteSubtaskId(null)}
+                              className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer">
+                              Cancel
+                            </button>
+                            <button type="button"
+                              onClick={() => { setConfirmDeleteSubtaskId(null); handleDeleteSubtask(subtask.id); }}
+                              className="px-3 py-1 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition shrink-0 cursor-pointer">
+                              Delete
+                            </button>
+                          </div> 
+                          ) : (
                         /* ── Normal subtask row ── */
                         <div className="flex items-center gap-3 group">
                           <button
@@ -527,7 +575,7 @@ export default function TaskDetailModal({
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDeleteSubtask(subtask.id)}
+                            onClick={() => setConfirmDeleteSubtaskId(subtask.id)}  /* ← was handleDeleteSubtask directly */
                             className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
                             title="Delete"
                           >
@@ -1080,10 +1128,9 @@ export default function TaskDetailModal({
                 <div key={c.id} className="flex gap-2 items-start">
                   {/* Avatar */}
                   <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                    {(c.commenterName ?? c.commenterUsername ?? "?")
-                      .charAt(0)
-                      .toUpperCase()}
+                    {(c.commenterName ?? c.commenterUsername ?? "?").charAt(0).toUpperCase()}
                   </div>
+
                   <div className="flex-1 min-w-0 relative">
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs font-semibold text-gray-700 truncate">
@@ -1091,37 +1138,82 @@ export default function TaskDetailModal({
                       </span>
                       <span className="text-[10px] text-gray-400 shrink-0">
                         {new Date(c.commentDate).toLocaleDateString("en-PH", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
+                          month: "short", day: "numeric",
+                          hour: "2-digit", minute: "2-digit",
                         })}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700 wrap-break-words whitespace-pre-wrap mt-0.5">
-                      <LinkText text={c.comment} />
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteComment(c.id)}
-                      // onClick={() => {
-                      //   // Optimistically remove comment from UI
-                      //   setSubtaskComments((prev) =>
-                      //     prev.filter((comment) => comment.id !== c.id),
-                      //   );
-                      //   deleteSubtaskComment(c.id).catch((err) => {
-                      //     console.error(
-                      //       "Failed to delete comment:",
-                      //       err.message,
-                      //     );
-                      //     // Revert UI if deletion fails
-                      //     setSubtaskComments((prev) => [...prev, c]);
-                      //   });
-                      // }}
-                      className="absolute text-red-500 top-1/2 right-0 transform -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+
+                    {/* ── Inline edit mode ── */}
+                    {editingCommentId === c.id ? (
+                      <div className="mt-1 flex gap-1.5">
+                        <input
+                          autoFocus
+                          value={editingCommentText}
+                          onChange={(e) => setEditingCommentText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) handleEditComment(c.id);
+                            if (e.key === "Escape") { setEditingCommentId(null); setEditingCommentText(""); }
+                          }}
+                          className="flex-1 border border-blue-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                          disabled={savingCommentEdit}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleEditComment(c.id)}
+                          disabled={savingCommentEdit || !editingCommentText.trim()}
+                          className="text-xs px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 cursor-pointer"
+                        >
+                          {savingCommentEdit ? "…" : "Save"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setEditingCommentId(null); setEditingCommentText(""); }}
+                          className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-700 wrap-break-words whitespace-pre-wrap mt-0.5">
+                        <LinkText text={c.comment} />
+                      </p>
+                    )}
+
+                    {/* ── Action buttons — only shown for comment owner ── */}
+                    {c.userId === currentUser?.id && editingCommentId !== c.id && (
+                      confirmDeleteCommentId === c.id ? (
+                      <div className="flex items-center gap-2 mt-1.5 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">
+                        <span className="flex-1 text-xs text-red-700">Delete this comment?</span>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteCommentId(null)}
+                          className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setConfirmDeleteCommentId(null); handleDeleteComment(c.id); }}
+                          className="text-xs font-semibold text-red-500 hover:text-red-700 cursor-pointer">
+                          Delete
+                        </button>
+                        </div>
+                      ) : (
+                          /* ── Normal edit / delete buttons ── */
+                      <div className="absolute top-1/2 right-0 -translate-y-1/2 flex gap-2">
+                        <button type="button"
+                          onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.comment ?? ""); }}
+                          className="text-blue-400 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
+                          <Pencil size={14} />
+                        </button>
+                        <button type="button"
+                          onClick={() => setConfirmDeleteCommentId(c.id)}  /* ← was handleDeleteComment directly */
+                          className="text-red-500 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      )
+                    )}
                   </div>
                 </div>
               ))
