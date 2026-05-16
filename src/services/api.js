@@ -118,6 +118,10 @@ export const moveTask = (taskId, phaseId, actualEndDate) =>
 export const updateSubtasks = (taskId, subtasks) =>
   request("PATCH", `/tasks/${taskId}/subtasks`, { subtasks });
 
+// PATCH method to set progress from 0 to 100 when no subtask exists, guard is in backend to ensure progress is equal to 0
+export const updateTaskProgress = (taskId, progress) =>
+  request("PATCH", `/tasks/${taskId}/progress`, { progress });
+
 /** Update task detail fields (assignee, severity, dates, etc.) */
 export const updateTask = (taskId, payload) =>
   request("PUT", `/tasks/${taskId}`, payload);

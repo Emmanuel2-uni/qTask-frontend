@@ -18,6 +18,7 @@ import {
   fetchSubtaskCommentCounts,
   createSubtaskComment,
   deleteSubtaskComment,
+  updateTaskProgress,
 } from "../../services/api";
 import LinkText from "../ui/LinkText";
 
@@ -59,6 +60,7 @@ export default function TaskDetailModal({
     qaAssigneeId: task.qaAssigneeId ?? "",
     severityId: task.severityId ?? "",
     statusId: task.statusId ?? "",
+    startDate: task.startDate ? task.startDate.split("T")[0] : "",
     targetDate: task.targetDate ? task.targetDate.split("T")[0] : "",
   });
   const [saving, setSaving] = useState(false);
@@ -90,8 +92,14 @@ export default function TaskDetailModal({
   });
 
   const doneCount = localSubtasks.filter((s) => s.isDone).length;
+
+  // When there are no subtasks, progress is controlled by a direct toggle (0 or 100).
+  // When subtasks exist, it's always derived from them.
+  const [localProgress, setLocalProgress] = useState(task.progress ?? 0);
   const progress =
-    calcProgressFromSubtasks(localSubtasks) ?? task.progress ?? 0;
+    localSubtasks.length > 0
+      ? (calcProgressFromSubtasks(localSubtasks) ?? 0)
+      : localProgress;
   const sc =
     SEVERITY_COLORS[task.severity] ??
     SEVERITY_COLORS[task.severityLabel] ??
@@ -135,6 +143,7 @@ export default function TaskDetailModal({
           : null,
         severityId: editForm.severityId ? Number(editForm.severityId) : null,
         statusId: editForm.statusId ? Number(editForm.statusId) : null,
+        startDate: editForm.startDate || null,
         targetDate: editForm.targetDate || null,
         // Pass resolved display fields so the parent can update task objects
         // in its own state — TaskCard's useEffect will pick these up instantly.
@@ -174,6 +183,7 @@ export default function TaskDetailModal({
         qaAssigneeId: editForm.qaAssigneeId ? Number(editForm.qaAssigneeId) : null,
         severityId: editForm.severityId ? Number(editForm.severityId) : null,
         statusId: newStatusId ? Number(newStatusId) : null,
+        startDate: editForm.startDate || null,
         targetDate: editForm.targetDate || null,
         statusLabel: matchedStatus?.label ?? task.statusLabel,
         statusColor: matchedStatus?.color ?? task.statusColor,
@@ -198,11 +208,13 @@ export default function TaskDetailModal({
     if (saved) setLocalSubtasks(normaliseSubtasks(saved));
   };
 
-  const handleAddSubtask = async () => {
+  const handleAddSubtask = async (e) => {
+    console.log(localSubtasks);
+    e.preventDefault();
     if (!newSubtaskTitle.trim()) return;
     const updated = [
       ...localSubtasks,
-      { id: 0, title: newSubtaskTitle.trim(), isDone: false }, // removed uid, instead added backend check for id 0
+      { id: uid(), title: newSubtaskTitle.trim(), isDone: false },
       // { title: newSubtaskTitle.trim(), isDone: false },
     ];
     setLocalSubtasks(updated);
@@ -230,6 +242,22 @@ export default function TaskDetailModal({
   };
 
   const [confirmUntickId, setConfirmUntickId] = useState(null);
+
+  // ── No-subtask progress toggle (0 ↔ 100) ────────────────────────────────
+  const [progressSaving, setProgressSaving] = useState(false);
+  const handleProgressToggle = async () => {
+    if (progressSaving) return;
+    const newProgress = localProgress === 100 ? 0 : 100;
+    setLocalProgress(newProgress); // optimistic
+    setProgressSaving(true);
+    try {
+      await updateTaskProgress(task.id, newProgress);
+    } catch {
+      setLocalProgress(localProgress); // revert on failure
+    } finally {
+      setProgressSaving(false);
+    }
+  };
 
   // const handleBackdropClick = (e) => {
   //   if (e.target === e.currentTarget) onClose();
@@ -513,29 +541,21 @@ export default function TaskDetailModal({
             )}
 
             {/* Add subtask form */}
-            <div className="flex gap-2 pt-1">
-              <textarea
+            <form onSubmit={handleAddSubtask} className="flex gap-2 pt-1">
+              <input
                 value={newSubtaskTitle}
                 onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAddSubtask();
-                  }
-                }}
-                placeholder="Add a subtask… (Shift+Enter for new line)"
-                rows={1}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400 resize-none"
+                placeholder="Add a subtask…"
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400"
               />
               <button
-                type="button"
-                onClick={handleAddSubtask}
+                type="submit"
                 disabled={!newSubtaskTitle.trim()}
                 className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               >
                 Add
               </button>
-            </div>
+            </form>
           </div>
         ) : (
           /* ══════════════════════════════════════════════════════════════════
@@ -613,15 +633,6 @@ export default function TaskDetailModal({
                     </p>
                   </div>
 
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                      Target date
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      {formatShortDate(task.targetDate) ?? "—"}
-                    </p>
-                  </div>
-
                   {/* Phase — read-only */}
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
@@ -631,6 +642,25 @@ export default function TaskDetailModal({
                       {task.phaseLabel ?? "—"}
                     </span>
                   </div>
+                  
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                      Start date
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      {formatShortDate(task.startDate) ?? "—"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                      Target date
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      {formatShortDate(task.targetDate) ?? "—"}
+                    </p>
+                  </div>
+
 
                    {/* Status — inline editable dropdown (no edit mode needed) */}
                   <div className="space-y-0.5">
@@ -818,17 +848,31 @@ export default function TaskDetailModal({
                     </div>
                   </div>
 
-                  {/* Target date */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Target date
-                    </label>
-                    <input
-                      type="date"
-                      value={editForm.targetDate}
-                      onChange={(e) => setField("targetDate", e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-                    />
+                  {/* Start date + Target date — side by side */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Start date
+                      </label>
+                      <input
+                        type="date"
+                        value={editForm.startDate}
+                        onChange={(e) => setField("startDate", e.target.value)}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Target date
+                      </label>
+                      <input
+                        type="date"
+                        value={editForm.targetDate}
+                        onChange={(e) => setField("targetDate", e.target.value)}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
                   </div>
 
                   <div className="flex gap-2 justify-end pt-1">
@@ -876,6 +920,37 @@ export default function TaskDetailModal({
                     {doneCount} of {localSubtasks.length} subtask
                     {localSubtasks.length !== 1 ? "s" : ""} completed
                   </p>
+                )}
+                {!editMode && localSubtasks.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={handleProgressToggle}
+                    disabled={progressSaving}
+                    className="flex items-center gap-2 mt-1 group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
+                        localProgress === 100
+                          ? "bg-emerald-500 border-emerald-500"
+                          : "border-gray-300 group-hover:border-blue-400"
+                      }`}
+                    >
+                      {localProgress === 100 && (
+                        <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                          <path
+                            d="M2 6l3 3 5-5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="text-xs text-gray-500 group-hover:text-gray-700 transition-colors select-none">
+                      {localProgress === 100 ? "Completed" : "Mark as complete"}
+                    </span>
+                  </button>
                 )}
               </div>
             </div>
@@ -1037,18 +1112,14 @@ export default function TaskDetailModal({
 
           {/* Input */}
           <div className="flex gap-2 px-4 py-3 border-t border-gray-100 shrink-0">
-            <textarea
+            <input
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handlePostComment();
-                }
-              }}
-              placeholder="Write a comment… (Shift+Enter for new line)"
-              rows={1}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400 resize-none"
+              onKeyDown={(e) =>
+                e.key === "Enter" && !e.shiftKey && handlePostComment()
+              }
+              placeholder="Write a comment…"
+              className="flex-1 border border-gray-200 rounded-lg h-8 px-3 text-sm focus:outline-none focus:border-blue-400 placeholder-gray-400"
               disabled={postingComment}
             />
             <button

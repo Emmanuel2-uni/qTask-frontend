@@ -36,6 +36,7 @@ export default function AddTaskModal({
     assigneeId: "",
     qaAssigneeId: "",
     severityId: "",
+    startDate: "", 
     targetDate: "",
   });
   const [adding, setAdding] = useState(false);
@@ -50,6 +51,7 @@ export default function AddTaskModal({
     assigneeId: form.assigneeId ? Number(form.assigneeId) : null,
     qaAssigneeId: form.qaAssigneeId ? Number(form.qaAssigneeId) : null,
     severityId: form.severityId ? Number(form.severityId) : null,
+    startDate: form.startDate || null,
     targetDate: form.targetDate || null,
   });
 
@@ -201,6 +203,19 @@ console.log(devUsers)
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Start date */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide ">
+              Start date
+            </label>
+            <input
+              type="date"
+              value={form.startDate}
+              onChange={(e) => set("startDate", e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+            />
           </div>
 
           {/* Target date */}
