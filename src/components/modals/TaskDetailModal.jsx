@@ -20,6 +20,7 @@ import {
   deleteSubtaskComment,
   updateSubtaskComment, 
   updateTaskProgress,
+  updateSubtask,
 } from "../../services/api";
 import LinkText from "../ui/LinkText";
 
@@ -245,6 +246,29 @@ export default function TaskDetailModal({
   const [confirmUntickId, setConfirmUntickId] = useState(null);
   const [confirmDeleteSubtaskId, setConfirmDeleteSubtaskId] = useState(null);
   const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState(null);
+
+  const [editingSubtaskId,    setEditingSubtaskId]    = useState(null);
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
+  const [savingSubtaskEdit,   setSavingSubtaskEdit]   = useState(false);
+
+  const handleEditSubtask = async (subtaskId) => {
+      if (!editingSubtaskTitle.trim()) return;
+      setSavingSubtaskEdit(true);
+      try {
+        await updateSubtask(subtaskId, editingSubtaskTitle.trim());
+        setLocalSubtasks((prev) =>
+          prev.map((s) =>
+            s.id === subtaskId ? { ...s, title: editingSubtaskTitle.trim() } : s
+          )
+        );
+        setEditingSubtaskId(null);
+        setEditingSubtaskTitle("");
+      } catch (err) {
+        console.error("Failed to edit subtask:", err.message);
+      } finally {
+        setSavingSubtaskEdit(false);
+      }
+    };
 
   // ── No-subtask progress toggle (0 ↔ 100) ────────────────────────────────
   const [progressSaving, setProgressSaving] = useState(false);
@@ -549,40 +573,72 @@ const handleEditComment = async (commentId) => {
                               </svg>
                             )}
                           </button>
-                          <span
-                            className={`flex-1 text-sm transition-colors ${
-                              subtask.isDone ? "line-through text-gray-400" : "text-gray-700"
-                            }`}
-                          >
-                            <LinkText text={subtask.title} />
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => openCommentPanel(subtask)}
-                            className={`transition-colors text-sm leading-none shrink-0 cursor-pointer ${
-                              activeSubtaskId === subtask.id && commentPanel
-                                ? "text-green-500"
-                                : "text-gray-500 hover:text-green-400"
-                            }`}
-                            title="Comments"
-                          >
-                            <MessageCircleMore size={14} />
-                              {(commentCounts[subtask.id] ?? 0) > 0 && (
-                                <span className="text-[10px] font-semibold leading-none">
-                                  {commentCounts[subtask.id]}
-                                </span>
+                            {/* Title — inline edit mode or plain text */}
+                              {editingSubtaskId === subtask.id ? (
+                                <div className="flex flex-1 gap-1.5 min-w-0">
+                                  <input
+                                    autoFocus
+                                    value={editingSubtaskTitle}
+                                    onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") handleEditSubtask(subtask.id);
+                                      if (e.key === "Escape") { setEditingSubtaskId(null); setEditingSubtaskTitle(""); }
+                                    }}
+                                    className="flex-1 min-w-0 border border-blue-300 rounded-md px-2 py-0.5 text-sm focus:outline-none focus:border-blue-500"
+                                    disabled={savingSubtaskEdit}
+                                  />
+                                  <button type="button" onClick={() => handleEditSubtask(subtask.id)}
+                                    disabled={savingSubtaskEdit || !editingSubtaskTitle.trim()}
+                                    className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 cursor-pointer shrink-0">
+                                    {savingSubtaskEdit ? "…" : "Save"}
+                                  </button>
+                                  <button type="button"
+                                    onClick={() => { setEditingSubtaskId(null); setEditingSubtaskTitle(""); }}
+                                    className="text-xs px-2 py-0.5 text-gray-500 hover:text-gray-700 cursor-pointer shrink-0">
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <span
+                                  className={`flex-1 text-sm transition-colors ${
+                                    subtask.isDone ? "line-through text-gray-400" : "text-gray-700"
+                                      }`}
+                                    >
+                                      <LinkText text={subtask.title} />
+                                    </span>
+                                  )}
+                          {/* Action buttons — hidden while in edit mode */}
+                          {editingSubtaskId !== subtask.id && (
+                            <>
+                              {/* Edit — only for creator */}
+                              {subtask.creatorId === currentUser?.id && (
+                                <button type="button"
+                                  onClick={() => { setEditingSubtaskId(subtask.id); setEditingSubtaskTitle(subtask.title); }}
+                                  className="text-blue-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-sm leading-none shrink-0 cursor-pointer"
+                                  title="Edit subtask">
+                                  <Pencil size={14} />
+                                </button>
                               )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteSubtaskId(subtask.id)}  /* ← was handleDeleteSubtask directly */
-                            className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                              {/* Comments */}
+                              <button type="button" onClick={() => openCommentPanel(subtask)}
+                                className={`transition-colors text-sm leading-none shrink-0 cursor-pointer ${
+                                  activeSubtaskId === subtask.id && commentPanel ? "text-green-500" : "text-gray-500 hover:text-green-400"
+                                }`} title="Comments">
+                                <MessageCircleMore size={14} />
+                                {(commentCounts[subtask.id] ?? 0) > 0 && (
+                                  <span className="text-[10px] font-semibold leading-none">{commentCounts[subtask.id]}</span>
+                                )}
+                              </button>
+                              {/* Delete */}
+                              <button type="button" onClick={() => setConfirmDeleteSubtaskId(subtask.id)}
+                                className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
+                                title="Delete">
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
                         </div>
-                      )}
+                        )}
                     </li>
                   ))}
               </ul>
