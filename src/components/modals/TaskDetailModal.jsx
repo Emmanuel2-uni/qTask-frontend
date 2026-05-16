@@ -214,7 +214,7 @@ export default function TaskDetailModal({
     if (!newSubtaskTitle.trim()) return;
     const updated = [
       ...localSubtasks,
-      { id: uid(), title: newSubtaskTitle.trim(), isDone: false },
+      { id: 0, title: newSubtaskTitle.trim(), isDone: false }, // removed uid dependence
       // { title: newSubtaskTitle.trim(), isDone: false },
     ];
     setLocalSubtasks(updated);
@@ -624,6 +624,24 @@ export default function TaskDetailModal({
                     </div>
                   </div>
 
+                  {/* Creator */}
+                  {task.creatorName && (
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                        Created by
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-semibold text-[10px]">
+                          {task.creatorName.charAt(0).toUpperCase()}
+                        </span>
+                        <span className="text-sm text-gray-700">
+                          {task.creatorName}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Severity — read-only */}
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                       Severity
