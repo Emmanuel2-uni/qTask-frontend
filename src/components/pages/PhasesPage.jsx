@@ -11,6 +11,7 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function PhasesPage() {
   const [phases, setPhases] = useState([]);
+  const [statuses, setStatuses] = useState([]);          // ← fetched once, passed down
   const [loading, setLoading] = useState(true);
   const [addingTo, setAddingTo] = useState(null);
   const [newPhaseLabel, setNewPhaseLabel] = useState("");
@@ -19,21 +20,30 @@ export default function PhasesPage() {
   const [fadeIn, setFadeIn] = useState(false);
 
   useEffect(() => {
-    fetchPhases();
+    // Fetch both in parallel — statuses are stable reference data
+    Promise.all([
+      fetch(`${BASE_URL}/phases`).then((r) => r.json()),
+      fetch(`${BASE_URL}/statuses`).then((r) => r.json()),
+    ])
+      .then(([phaseData, statusData]) => {
+        setPhases(phaseData);
+        setStatuses(statusData);
+      })
+      .catch((err) => console.error("Error fetching data:", err))
+      .finally(() => {
+        setLoading(false);
+        setTimeout(() => setFadeIn(true), 50);
+      });
   }, []);
 
   const fetchPhases = async () => {
     try {
-      setLoading(true);
       const response = await fetch(`${BASE_URL}/phases`);
       if (!response.ok) throw new Error("Failed to fetch phases");
       const data = await response.json();
       setPhases(data);
     } catch (error) {
       console.error("Error fetching phases:", error);
-    } finally {
-      setLoading(false);
-      setTimeout(() => setFadeIn(true), 50);
     }
   };
 
@@ -82,7 +92,6 @@ export default function PhasesPage() {
       if (!response.ok) throw new Error("Failed to update phase");
       const updated = await response.json();
       setPhases((prev) => prev.map((p) => (p.id === id ? updated : p)));
-      // Notify the rest of the app (KanbanBoard re-fetches phases on this event)
       window.dispatchEvent(new Event("phases-updated"));
     } catch (error) {
       console.error("Error updating phase:", error);
@@ -196,6 +205,7 @@ export default function PhasesPage() {
                   <PhaseCard
                     key={phase.id}
                     phase={phase}
+                    statuses={statuses}       // ← passed down
                     onDelete={handleDeletePhase}
                     onUpdate={handleUpdatePhase}
                   />
@@ -289,30 +299,24 @@ export default function PhasesPage() {
 }
 
 // ── PhaseCard ─────────────────────────────────────────────────
-function PhaseCard({ phase, onDelete, onUpdate }) {
+function PhaseCard({ phase, statuses, onDelete, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(phase.label);
   const [isDefault, setIsDefault] = useState(phase.isDefault === 1);
   const [isFinal, setIsFinal] = useState(phase.isFinal === 1);
+  const [selectedStatusId, setSelectedStatusId] = useState(phase.defaultStatusId ?? null);  // ← new
   const [saving, setSaving] = useState(false);
   const [sortOrderValue, setSortOrderValue] = useState(phase.sortOrder || 0);
   const inputRef = useRef(null);
 
   // Keep local state in sync if the parent pushes a fresh phase object
-  // useEffect(() => {
-  //   if (!editing) {
-  //     setLabel(phase.label);
-  //     setIsDefault(phase.isDefault === 1);
-  //     setIsFinal(phase.isFinal === 1);
-  //   }
-  // }, [phase, editing]);
-
   useEffect(() => {
     if (!editing) {
       setLabel(phase.label);
       setIsDefault(phase.isDefault === 1);
       setIsFinal(phase.isFinal === 1);
       setSortOrderValue(phase.sortOrder || 0);
+      setSelectedStatusId(phase.defaultStatusId ?? null);         // ← new
     }
   }, [phase, editing]);
 
@@ -320,15 +324,16 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
     setLabel(phase.label);
     setIsDefault(phase.isDefault === 1);
     setIsFinal(phase.isFinal === 1);
+    setSelectedStatusId(phase.defaultStatusId ?? null);           // ← new
     setEditing(true);
-    // Focus the input on the next paint
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const cancelEdit = (key) => {
+  const cancelEdit = () => {
     setLabel(phase.label);
     setIsDefault(phase.isDefault === 1);
     setIsFinal(phase.isFinal === 1);
+    setSelectedStatusId(phase.defaultStatusId ?? null);           // ← new
     setEditing(false);
   };
 
@@ -342,10 +347,14 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
       isFinal: isFinal ? 1 : 0,
       grouping: key,
       sortOrder: sortOrderValue,
+      defaultStatusId: selectedStatusId,                          // ← new (null = cleared)
     });
     setSaving(false);
     setEditing(false);
   };
+
+  // Resolve the currently-selected status object for view-mode badge
+  const resolvedStatus = statuses.find((s) => s.id === phase.defaultStatusId) ?? null;  // ← new
 
   // ── View mode ────────────────────────────────────────────
   if (!editing) {
@@ -368,8 +377,6 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
       >
         {/* Sort Order Number */}
         <div
-          onClick={() => saveEdit(phase.grouping)}
-          disabled={saving || !label.trim()}
           className="absolute bottom-2.5 right-2.5 w-5 h-5 flex text-sm font-medium text-gray-400 items-center justify-center rounded-full transition-all"
           title="Sort Order"
         >
@@ -435,6 +442,20 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
               Final
             </span>
           )}
+          {/* ── Default Status badge ── */}
+          {resolvedStatus && (
+            <span
+              className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+              style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569" }}
+              title={`Default status: ${resolvedStatus.label}`}
+            >
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ background: resolvedStatus.color }}
+              />
+              {resolvedStatus.label}
+            </span>
+          )}
         </div>
       </div>
     );
@@ -464,9 +485,10 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
       >
         <Check size={10} />
       </button>
+
       {/* Cancel button */}
       <button
-        onClick={() => cancelEdit(phase.grouping)}
+        onClick={cancelEdit}
         disabled={saving}
         className="absolute top-2.5 right-2.5 w-5 h-5 flex items-center justify-center rounded-full transition-all text-[10px]"
         style={{ background: "#fee2e2", color: "#ef4444" }}
@@ -474,6 +496,7 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
       >
         <X size={10} />
       </button>
+
       {/* Name input */}
       <input
         ref={inputRef}
@@ -481,7 +504,7 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") saveEdit();
+          if (e.key === "Enter") saveEdit(phase.grouping);
           if (e.key === "Escape") cancelEdit();
         }}
         className="w-full text-sm font-semibold rounded-lg px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-300 pr-10"
@@ -492,8 +515,9 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
         }}
         placeholder="Phase name"
       />
+
       {/* Flag toggles */}
-      <div className="mt-auto pt-3 flex flex-col gap-2">
+      <div className="mt-3 flex flex-col gap-2">
         <ToggleRow
           label="Default"
           active={isDefault}
@@ -509,16 +533,44 @@ function PhaseCard({ phase, onDelete, onUpdate }) {
           onToggle={() => setIsFinal((v) => !v)}
         />
       </div>
-      {/* Flag toggles */}
-      <div className="mt-auto pt-2 flex flex-col gap-2">
+
+      {/* Default Status dropdown */}
+      <div className="mt-2 flex flex-col gap-1">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
+          Default Status
+        </span>
+        <select
+          value={selectedStatusId ?? ""}
+          onChange={(e) =>
+            setSelectedStatusId(e.target.value ? Number(e.target.value) : null)
+          }
+          className="w-full text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          style={{
+            border: "1px solid #bfdbfe",
+            background: "#eff6ff",
+            color: "#1e293b",
+          }}
+        >
+          <option value="">— None —</option>
+          {statuses.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Sort Order input */}
+      <div className="mt-2">
         <input
           type="number"
-          className="border border-gray-300 rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Sort Order"
           value={sortOrderValue}
           onChange={(e) => setSortOrderValue(Number(e.target.value))}
         />
       </div>
+
       {saving && (
         <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-white/70">
           <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
