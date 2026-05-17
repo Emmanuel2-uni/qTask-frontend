@@ -19,6 +19,7 @@ import {
   createSubtaskComment,
   deleteSubtaskComment,
   updateSubtaskComment, 
+  deleteSubtask,
   updateTaskProgress,
   updateSubtask,
 } from "../../services/api";
@@ -224,14 +225,30 @@ export default function TaskDetailModal({
     const saved = await onUpdate(task.id, { subtasks: updated });
     if (saved) setLocalSubtasks(normaliseSubtasks(saved));
   };
+  // OLD handler
+  // const handleDeleteSubtask = async (subtaskId) => {
+  //   setCommentPanel(false);
+  //   const updated = localSubtasks.filter((s) => s.id !== subtaskId);
+  //   setLocalSubtasks(updated);
+  //   const saved = await onUpdate(task.id, { subtasks: updated });
+  //   if (saved) setLocalSubtasks(normaliseSubtasks(saved));
+  // };
 
   const handleDeleteSubtask = async (subtaskId) => {
     setCommentPanel(false);
-    const updated = localSubtasks.filter((s) => s.id !== subtaskId);
-    setLocalSubtasks(updated);
-    const saved = await onUpdate(task.id, { subtasks: updated });
-    if (saved) setLocalSubtasks(normaliseSubtasks(saved));
-  };
+
+    // Optimistic removal
+    setLocalSubtasks((prev) => prev.filter((s) => s.id !== subtaskId));
+
+    try {
+      await deleteSubtask(subtaskId); // DELETE /api/subtasks/:subtaskId
+    } catch (err) {
+      // Roll back the optimistic removal if the server rejected it (e.g. 403)
+      const saved = await onUpdate(task.id, { subtasks: localSubtasks });
+      if (saved) setLocalSubtasks(normaliseSubtasks(saved));
+      console.error("Delete failed:", err);
+      }
+    };
 
   const handleDeleteTask = async () => {
     setDeleting(true);
@@ -492,6 +509,7 @@ const handleEditComment = async (commentId) => {
               )}
             </div>
 
+
             {/* Subtask list */}
             {localSubtasks.length === 0 ? (
               <p className="text-sm text-gray-400 italic">
@@ -638,11 +656,11 @@ const handleEditComment = async (commentId) => {
                             </>
                           )}
                         </div>
-                        )}
-                    </li>
-                  ))}
-              </ul>
-            )}
+                       )}
+                     </li>
+                   ))}
+               </ul>
+              )}
 
             {/* Add subtask form */}
             <form onSubmit={handleAddSubtask} className="flex gap-2 pt-1">
@@ -1236,8 +1254,8 @@ const handleEditComment = async (commentId) => {
                       </p>
                     )}
 
-                    {/* ── Action buttons — only shown for comment owner ── */}
-                    {c.userId === currentUser?.id && editingCommentId !== c.id && (
+                    {/* ── Action buttons — only shown for comment owner OR Admin── */}
+                    { (c.userId === currentUser?.id  || currentUser?.role === "Admin" )&& editingCommentId !== c.id && (
                       confirmDeleteCommentId === c.id ? (
                       <div className="flex items-center gap-2 mt-1.5 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">
                         <span className="flex-1 text-xs text-red-700">Delete this comment?</span>

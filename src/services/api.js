@@ -101,6 +101,10 @@ export const updateSubtaskComment = (commentId, comment) =>
 export const updateSubtask = (subtaskId, title) =>
   request("PATCH", `/subtasks/${subtaskId}`, { title });
 
+export const deleteSubtask = (subtaskId) =>
+  request("DELETE", `/subtasks/${subtaskId}`);
+
+
 // ── Activity Logs ─────────────────────────────────────────────
 export const fetchActivityLogs = (filters = {}) => {
   const params = new URLSearchParams(filters).toString();
