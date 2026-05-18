@@ -369,36 +369,52 @@ export default function AppShell({ currentUser, logout }) {
   );
 
   const handleDoneConfirm = useCallback(
-    async (actualEndDate) => {
-      if (!doneModal) return;
-      const { taskId, targetPhaseId } = doneModal;
-      const targetPhase = allPhases.find((p) => p.id === targetPhaseId);
-      try {
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === taskId
-              ? {
-                  ...t,
-                  phaseId: targetPhaseId,
-                  phaseLabel: targetPhase?.label,
-                  actualEndDate,
-                  progress: 100,
-                }
-              : t,
-          ),
-        );
-        setRenderKey((k) => k + 1);
-        const updated = await moveTask(taskId, targetPhaseId, actualEndDate);
-        setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+  async (actualEndDate) => {
+    if (!doneModal) return;
+    const { taskId, targetPhaseId } = doneModal;
+    const targetPhase = allPhases.find((p) => p.id === targetPhaseId);
+
+    // Capture original phase BEFORE the optimistic update so we can roll back
+    const originalTask = tasks.find((t) => t.id === taskId);
+    const originalPhaseId = originalTask?.phaseId;
+
+    try {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                phaseId: targetPhaseId,
+                phaseLabel: targetPhase?.label,
+                actualEndDate,
+                //progress: 100, // removed so we don't set the progress to 100
+              }
+            : t,
+        ),
+      );
+      setRenderKey((k) => k + 1);
+      const updated = await moveTask(taskId, targetPhaseId, actualEndDate);
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
       } catch (err) {
-        console.error("Done confirm failed:", err.message);
-        alert(`Failed to mark done: ${err.message}`);
-      } finally {
-        setDoneModal(null);
-      }
-    },
-    [doneModal, allPhases],
-  );
+          console.error("Done confirm failed:", err.message);
+
+          // Roll back — restore the task to its original phase, same as handleDragEnd does
+          if (originalPhaseId !== undefined) {
+            setTasks((prev) =>
+              prev.map((t) =>
+                t.id === taskId ? { ...t, phaseId: originalPhaseId } : t,
+              ),
+            );
+            setRenderKey((k) => k + 1);
+          }
+
+          alert(`Failed to mark done: ${err.message}`);
+        } finally {
+          setDoneModal(null);
+        }
+      },
+      [doneModal, allPhases, tasks],
+    );
 
   const handleAddTask = useCallback(
     async (formData) => {
