@@ -18,7 +18,7 @@ import {
   fetchSubtaskCommentCounts,
   createSubtaskComment,
   deleteSubtaskComment,
-  updateSubtaskComment, 
+  updateSubtaskComment,
   deleteSubtask,
   updateTaskProgress,
   updateSubtask,
@@ -30,6 +30,11 @@ function normaliseSubtasks(subtasks) {
     ...s,
     isDone: Boolean(s.isDone ?? s.done ?? false),
   }));
+}
+
+// Sort: pending subtasks first, completed subtasks last
+function sortSubtasks(list) {
+  return [...list.filter((s) => !s.isDone), ...list.filter((s) => s.isDone)];
 }
 
 export default function TaskDetailModal({
@@ -45,7 +50,7 @@ export default function TaskDetailModal({
   isPM,
 }) {
   const [localSubtasks, setLocalSubtasks] = useState(() =>
-    normaliseSubtasks(task.subtasks),
+    sortSubtasks(normaliseSubtasks(task.subtasks)),
   );
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [editMode, setEditMode] = useState(false);
@@ -72,12 +77,14 @@ export default function TaskDetailModal({
 
   // -- Close using ESC button -----------------------------------------
   useEffect(() => {
-    const handleKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
- // ── Comment counts (subtaskId → number) ──────────────────────────────────
+  // ── Comment counts (subtaskId → number) ──────────────────────────────────
   const [commentCounts, setCommentCounts] = useState({});
   useEffect(() => {
     const ids = localSubtasks.map((s) => s.id).filter((id) => id > 0);
@@ -86,7 +93,6 @@ export default function TaskDetailModal({
       .then(setCommentCounts)
       .catch(() => {}); // non-critical, badge simply won't show
   }, [localSubtasks]);
-
 
   // ── Optimistic local status for the modal's own status pill ──────────────
   const [localStatus, setLocalStatus] = useState({
@@ -124,8 +130,6 @@ export default function TaskDetailModal({
       : users.filter((u) => u.role === "QA");
 
   const setField = (k, v) => setEditForm((prev) => ({ ...prev, [k]: v }));
-
-  console.log(editForm)
 
   // ── Edit save ─────────────────────────────────────────────────────────────
   const handleSaveEdit = async () => {
@@ -169,10 +173,9 @@ export default function TaskDetailModal({
     }
   };
 
-
-    // ── Inline status change (view mode) ─────────────────────────────────────
+  // ── Inline status change (view mode) ─────────────────────────────────────
   const [statusSaving, setStatusSaving] = useState(false);
- 
+
   const handleStatusChange = async (newStatusId) => {
     const matchedStatus = statuses.find(
       (s) => String(s.id) === String(newStatusId),
@@ -184,7 +187,9 @@ export default function TaskDetailModal({
         title: editForm.title,
         description: editForm.description,
         assigneeId: editForm.assigneeId ? Number(editForm.assigneeId) : null,
-        qaAssigneeId: editForm.qaAssigneeId ? Number(editForm.qaAssigneeId) : null,
+        qaAssigneeId: editForm.qaAssigneeId
+          ? Number(editForm.qaAssigneeId)
+          : null,
         severityId: editForm.severityId ? Number(editForm.severityId) : null,
         statusId: newStatusId ? Number(newStatusId) : null,
         startDate: editForm.startDate || null,
@@ -193,27 +198,28 @@ export default function TaskDetailModal({
         statusColor: matchedStatus?.color ?? task.statusColor,
       });
       if (matchedStatus) {
-        setLocalStatus({ label: matchedStatus.label, color: matchedStatus.color });
+        setLocalStatus({
+          label: matchedStatus.label,
+          color: matchedStatus.color,
+        });
       }
     } finally {
       setStatusSaving(false);
     }
   };
 
-
-
   // ── Subtask handlers ──────────────────────────────────────────────────────
   const handleToggleSubtask = async (subtaskId) => {
-    const updated = localSubtasks.map((s) =>
+    const toggled = localSubtasks.map((s) =>
       s.id === subtaskId ? { ...s, isDone: !s.isDone } : s,
     );
+    const updated = sortSubtasks(toggled);
     setLocalSubtasks(updated);
     const saved = await onUpdate(task.id, { subtasks: updated });
-    if (saved) setLocalSubtasks(normaliseSubtasks(saved));
+    if (saved) setLocalSubtasks(sortSubtasks(normaliseSubtasks(saved)));
   };
 
   const handleAddSubtask = async (e) => {
-    console.log(localSubtasks);
     e.preventDefault();
     if (!newSubtaskTitle.trim()) return;
     const updated = [
@@ -224,7 +230,7 @@ export default function TaskDetailModal({
     setLocalSubtasks(updated);
     setNewSubtaskTitle("");
     const saved = await onUpdate(task.id, { subtasks: updated });
-    if (saved) setLocalSubtasks(normaliseSubtasks(saved));
+    if (saved) setLocalSubtasks(sortSubtasks(normaliseSubtasks(saved)));
   };
   // OLD handler
   // const handleDeleteSubtask = async (subtaskId) => {
@@ -248,8 +254,8 @@ export default function TaskDetailModal({
       const saved = await onUpdate(task.id, { subtasks: localSubtasks });
       if (saved) setLocalSubtasks(normaliseSubtasks(saved));
       console.error("Delete failed:", err);
-      }
-    };
+    }
+  };
 
   const handleDeleteTask = async () => {
     setDeleting(true);
@@ -265,28 +271,28 @@ export default function TaskDetailModal({
   const [confirmDeleteSubtaskId, setConfirmDeleteSubtaskId] = useState(null);
   const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState(null);
 
-  const [editingSubtaskId,    setEditingSubtaskId]    = useState(null);
+  const [editingSubtaskId, setEditingSubtaskId] = useState(null);
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
-  const [savingSubtaskEdit,   setSavingSubtaskEdit]   = useState(false);
+  const [savingSubtaskEdit, setSavingSubtaskEdit] = useState(false);
 
   const handleEditSubtask = async (subtaskId) => {
-      if (!editingSubtaskTitle.trim()) return;
-      setSavingSubtaskEdit(true);
-      try {
-        await updateSubtask(subtaskId, editingSubtaskTitle.trim());
-        setLocalSubtasks((prev) =>
-          prev.map((s) =>
-            s.id === subtaskId ? { ...s, title: editingSubtaskTitle.trim() } : s
-          )
-        );
-        setEditingSubtaskId(null);
-        setEditingSubtaskTitle("");
-      } catch (err) {
-        console.error("Failed to edit subtask:", err.message);
-      } finally {
-        setSavingSubtaskEdit(false);
-      }
-    };
+    if (!editingSubtaskTitle.trim()) return;
+    setSavingSubtaskEdit(true);
+    try {
+      await updateSubtask(subtaskId, editingSubtaskTitle.trim());
+      setLocalSubtasks((prev) =>
+        prev.map((s) =>
+          s.id === subtaskId ? { ...s, title: editingSubtaskTitle.trim() } : s,
+        ),
+      );
+      setEditingSubtaskId(null);
+      setEditingSubtaskTitle("");
+    } catch (err) {
+      console.error("Failed to edit subtask:", err.message);
+    } finally {
+      setSavingSubtaskEdit(false);
+    }
+  };
 
   // ── No-subtask progress toggle (0 ↔ 100) ────────────────────────────────
   const [progressSaving, setProgressSaving] = useState(false);
@@ -341,7 +347,10 @@ export default function TaskDetailModal({
         newComment.trim(),
       );
       setSubtaskComments((prev) => [...prev, created]);
-      setCommentCounts((prev) => ({ ...prev, [activeSubtaskId]: (prev[activeSubtaskId] ?? 0) + 1 }));
+      setCommentCounts((prev) => ({
+        ...prev,
+        [activeSubtaskId]: (prev[activeSubtaskId] ?? 0) + 1,
+      }));
       setNewComment("");
     } catch (err) {
       console.error("Failed to post comment:", err.message);
@@ -355,39 +364,42 @@ export default function TaskDetailModal({
     try {
       await deleteSubtaskComment(commentId);
       setSubtaskComments((prev) => prev.filter((c) => c.id !== commentId));
-       setCommentCounts((prev) => ({ ...prev, [activeSubtaskId]: Math.max(0, (prev[activeSubtaskId] ?? 1) - 1) }));
+      setCommentCounts((prev) => ({
+        ...prev,
+        [activeSubtaskId]: Math.max(0, (prev[activeSubtaskId] ?? 1) - 1),
+      }));
     } catch (err) {
       console.error("Failed to delete comment:", err.message);
     }
   };
 
   // ── Current logged-in user (for ownership check) ─────────────────────────
-const currentUser = JSON.parse(localStorage.getItem("qtask_user") ?? "null");
+  const currentUser = JSON.parse(localStorage.getItem("qtask_user") ?? "null");
 
-// ── Comment edit state ────────────────────────────────────────────────────
-const [editingCommentId, setEditingCommentId]   = useState(null);
-const [editingCommentText, setEditingCommentText] = useState("");
-const [savingCommentEdit, setSavingCommentEdit]  = useState(false);
+  // ── Comment edit state ────────────────────────────────────────────────────
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [savingCommentEdit, setSavingCommentEdit] = useState(false);
 
-const handleEditComment = async (commentId) => {
-  if (!editingCommentText.trim()) return;
-  setSavingCommentEdit(true);
-  try {
-    await updateSubtaskComment(commentId, editingCommentText.trim());
-    // Patch local state — no refetch needed
-    setSubtaskComments((prev) =>
-      prev.map((c) =>
-        c.id === commentId ? { ...c, comment: editingCommentText.trim() } : c
-      )
-    );
-    setEditingCommentId(null);
-    setEditingCommentText("");
-  } catch (err) {
-    console.error("Failed to edit comment:", err.message);
-  } finally {
-    setSavingCommentEdit(false);
-  }
-};
+  const handleEditComment = async (commentId) => {
+    if (!editingCommentText.trim()) return;
+    setSavingCommentEdit(true);
+    try {
+      await updateSubtaskComment(commentId, editingCommentText.trim());
+      // Patch local state — no refetch needed
+      setSubtaskComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId ? { ...c, comment: editingCommentText.trim() } : c,
+        ),
+      );
+      setEditingCommentId(null);
+      setEditingCommentText("");
+    } catch (err) {
+      console.error("Failed to edit comment:", err.message);
+    } finally {
+      setSavingCommentEdit(false);
+    }
+  };
 
   // ── Shared header used in both views ─────────────────────────────────────
   const renderHeader = () => (
@@ -511,158 +523,355 @@ const handleEditComment = async (commentId) => {
               )}
             </div>
 
-
             {/* Subtask list */}
             {localSubtasks.length === 0 ? (
               <p className="text-sm text-gray-400 italic">
                 No subtasks yet. Add one below to start tracking progress.
               </p>
             ) : (
-              <ul className="space-y-2">
-                {localSubtasks.map((subtask) => (
-                    <li key={subtask.id}>
-                      {confirmUntickId === subtask.id ? (
-                        /* ── Untick confirmation strip ── */
-                        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
-                          <AlertTriangle size={14} className="text-amber-400 shrink-0" />
-                          <span className="flex-1 text-sm text-amber-800">
-                            Mark <strong>{subtask.title}</strong> as incomplete?
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmUntickId(null)}
-                            className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setConfirmUntickId(null);
-                              handleToggleSubtask(subtask.id);
-                            }}
-                            className="px-3 py-1 text-sm font-semibold bg-amber-400 text-white rounded-lg hover:bg-amber-500 transition shrink-0 cursor-pointer"
-                          >
-                            Yes, undo
-                          </button>
-                        </div>
-                      ) : confirmDeleteSubtaskId === subtask.id ? (
-                          /* ── Delete confirmation strip ── */
-                          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
-                            <AlertTriangle size={14} className="text-red-400 shrink-0" />
-                            <span className="flex-1 text-sm text-red-800">
-                              Delete <strong>{subtask.title}</strong>? This cannot be undone.
+              <div
+                className="overflow-y-auto pr-1"
+                style={{ maxHeight: "260px" }}
+              >
+                <ul className="space-y-2">
+                  {/* Pending subtasks */}
+                  {localSubtasks
+                    .filter((s) => !s.isDone)
+                    .map((subtask) => (
+                      <li key={subtask.id}>
+                        {confirmUntickId === subtask.id ? (
+                          /* ── Untick confirmation strip ── */
+                          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                            <AlertTriangle
+                              size={14}
+                              className="text-amber-400 shrink-0"
+                            />
+                            <span className="flex-1 text-sm text-amber-800">
+                              Mark <strong>{subtask.title}</strong> as
+                              incomplete?
                             </span>
-                            <button type="button" onClick={() => setConfirmDeleteSubtaskId(null)}
-                              className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer">
+                            <button
+                              type="button"
+                              onClick={() => setConfirmUntickId(null)}
+                              className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
+                            >
                               Cancel
                             </button>
-                            <button type="button"
-                              onClick={() => { setConfirmDeleteSubtaskId(null); handleDeleteSubtask(subtask.id); }}
-                              className="px-3 py-1 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition shrink-0 cursor-pointer">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfirmUntickId(null);
+                                handleToggleSubtask(subtask.id);
+                              }}
+                              className="px-3 py-1 text-sm font-semibold bg-amber-400 text-white rounded-lg hover:bg-amber-500 transition shrink-0 cursor-pointer"
+                            >
+                              Yes, undo
+                            </button>
+                          </div>
+                        ) : confirmDeleteSubtaskId === subtask.id ? (
+                          /* ── Delete confirmation strip ── */
+                          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                            <AlertTriangle
+                              size={14}
+                              className="text-red-400 shrink-0"
+                            />
+                            <span className="flex-1 text-sm text-red-800">
+                              Delete <strong>{subtask.title}</strong>? This
+                              cannot be undone.
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteSubtaskId(null)}
+                              className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfirmDeleteSubtaskId(null);
+                                handleDeleteSubtask(subtask.id);
+                              }}
+                              className="px-3 py-1 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition shrink-0 cursor-pointer"
+                            >
                               Delete
                             </button>
-                          </div> 
-                          ) : (
-                        /* ── Normal subtask row ── */
-                        <div className="flex items-center gap-3 group">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (subtask.isDone) {
-                                setConfirmUntickId(subtask.id);
-                              } else {
-                                handleToggleSubtask(subtask.id);
-                              }
-                            }}
-                            className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors cursor-pointer ${
-                              subtask.isDone
-                                ? "bg-emerald-500 border-emerald-500"
-                                : "border-gray-300 hover:border-blue-400"
-                            }`}
-                          >
-                            {subtask.isDone && (
-                              <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
-                                <path
-                                  d="M2 6l3 3 5-5"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            )}
-                          </button>
-                            {/* Title — inline edit mode or plain text */}
-                              {editingSubtaskId === subtask.id ? (
-                                <div className="flex flex-1 gap-1.5 min-w-0">
-                                  <input
-                                    autoFocus
-                                    value={editingSubtaskTitle}
-                                    onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") handleEditSubtask(subtask.id);
-                                      if (e.key === "Escape") { setEditingSubtaskId(null); setEditingSubtaskTitle(""); }
-                                    }}
-                                    className="flex-1 min-w-0 border border-blue-300 rounded-md px-2 py-0.5 text-sm focus:outline-none focus:border-blue-500"
-                                    disabled={savingSubtaskEdit}
+                          </div>
+                        ) : (
+                          /* ── Normal subtask row ── */
+                          <div className="flex items-center gap-3 group">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (subtask.isDone) {
+                                  setConfirmUntickId(subtask.id);
+                                } else {
+                                  handleToggleSubtask(subtask.id);
+                                }
+                              }}
+                              className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors cursor-pointer ${
+                                subtask.isDone
+                                  ? "bg-emerald-500 border-emerald-500"
+                                  : "border-gray-300 hover:border-blue-400"
+                              }`}
+                            >
+                              {subtask.isDone && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  viewBox="0 0 12 12"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M2 6l3 3 5-5"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
                                   />
-                                  <button type="button" onClick={() => handleEditSubtask(subtask.id)}
-                                    disabled={savingSubtaskEdit || !editingSubtaskTitle.trim()}
-                                    className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 cursor-pointer shrink-0">
-                                    {savingSubtaskEdit ? "…" : "Save"}
+                                </svg>
+                              )}
+                            </button>
+                            {/* Title — inline edit mode or plain text */}
+                            {editingSubtaskId === subtask.id ? (
+                              <div className="flex flex-1 gap-1.5 min-w-0">
+                                <input
+                                  autoFocus
+                                  value={editingSubtaskTitle}
+                                  onChange={(e) =>
+                                    setEditingSubtaskTitle(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter")
+                                      handleEditSubtask(subtask.id);
+                                    if (e.key === "Escape") {
+                                      setEditingSubtaskId(null);
+                                      setEditingSubtaskTitle("");
+                                    }
+                                  }}
+                                  className="flex-1 min-w-0 border border-blue-300 rounded-md px-2 py-0.5 text-sm focus:outline-none focus:border-blue-500"
+                                  disabled={savingSubtaskEdit}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditSubtask(subtask.id)}
+                                  disabled={
+                                    savingSubtaskEdit ||
+                                    !editingSubtaskTitle.trim()
+                                  }
+                                  className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 cursor-pointer shrink-0"
+                                >
+                                  {savingSubtaskEdit ? "…" : "Save"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingSubtaskId(null);
+                                    setEditingSubtaskTitle("");
+                                  }}
+                                  className="text-xs px-2 py-0.5 text-gray-500 hover:text-gray-700 cursor-pointer shrink-0"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <span
+                                className={`flex-1 text-sm transition-colors ${
+                                  subtask.isDone
+                                    ? "line-through text-gray-400"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                <LinkText text={subtask.title} />
+                              </span>
+                            )}
+                            {/* Action buttons — hidden while in edit mode */}
+                            {editingSubtaskId !== subtask.id && (
+                              <>
+                                {/* Edit — only for creator */}
+                                {subtask.creatorId === currentUser?.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingSubtaskId(subtask.id);
+                                      setEditingSubtaskTitle(subtask.title);
+                                    }}
+                                    className="text-blue-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-sm leading-none shrink-0 cursor-pointer"
+                                    title="Edit subtask"
+                                  >
+                                    <Pencil size={14} />
                                   </button>
-                                  <button type="button"
-                                    onClick={() => { setEditingSubtaskId(null); setEditingSubtaskTitle(""); }}
-                                    className="text-xs px-2 py-0.5 text-gray-500 hover:text-gray-700 cursor-pointer shrink-0">
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <span
-                                  className={`flex-1 text-sm transition-colors ${
-                                    subtask.isDone ? "line-through text-gray-400" : "text-gray-700"
-                                      }`}
-                                    >
-                                      <LinkText text={subtask.title} />
+                                )}
+                                {/* Comments */}
+                                <button
+                                  type="button"
+                                  onClick={() => openCommentPanel(subtask)}
+                                  className={`transition-colors text-sm leading-none shrink-0 cursor-pointer ${
+                                    activeSubtaskId === subtask.id &&
+                                    commentPanel
+                                      ? "text-green-500"
+                                      : "text-gray-500 hover:text-green-400"
+                                  }`}
+                                  title="Comments"
+                                >
+                                  <MessageCircleMore size={14} />
+                                  {(commentCounts[subtask.id] ?? 0) > 0 && (
+                                    <span className="text-[10px] font-semibold leading-none">
+                                      {commentCounts[subtask.id]}
                                     </span>
                                   )}
-                          {/* Action buttons — hidden while in edit mode */}
-                          {editingSubtaskId !== subtask.id && (
-                            <>
-                              {/* Edit — only for creator */}
-                              {subtask.creatorId === currentUser?.id && (
-                                <button type="button"
-                                  onClick={() => { setEditingSubtaskId(subtask.id); setEditingSubtaskTitle(subtask.title); }}
-                                  className="text-blue-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-sm leading-none shrink-0 cursor-pointer"
-                                  title="Edit subtask">
-                                  <Pencil size={14} />
                                 </button>
-                              )}
-                              {/* Comments */}
-                              <button type="button" onClick={() => openCommentPanel(subtask)}
-                                className={`transition-colors text-sm leading-none shrink-0 cursor-pointer ${
-                                  activeSubtaskId === subtask.id && commentPanel ? "text-green-500" : "text-gray-500 hover:text-green-400"
-                                }`} title="Comments">
-                                <MessageCircleMore size={14} />
-                                {(commentCounts[subtask.id] ?? 0) > 0 && (
-                                  <span className="text-[10px] font-semibold leading-none">{commentCounts[subtask.id]}</span>
-                                )}
-                              </button>
-                              {/* Delete */}
-                              <button type="button" onClick={() => setConfirmDeleteSubtaskId(subtask.id)}
-                                className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
-                                title="Delete">
-                                <Trash2 size={14} />
-                              </button>
-                            </>
-                          )}
+                                {/* Delete */}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setConfirmDeleteSubtaskId(subtask.id)
+                                  }
+                                  className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
+                                  title="Delete"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+
+                  {/* ── Completed divider + completed subtasks ── */}
+                  {localSubtasks.some((s) => s.isDone) && (
+                    <>
+                      <li className="pt-1 pb-0.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 border-t border-dashed border-gray-200" />
+                          <span className="text-[10px] font-medium text-gray-400 tracking-widest uppercase shrink-0 select-none">
+                            completed
+                          </span>
+                          <div className="flex-1 border-t border-dashed border-gray-200" />
                         </div>
-                       )}
-                     </li>
-                   ))}
-               </ul>
-              )}
+                      </li>
+                      {localSubtasks
+                        .filter((s) => s.isDone)
+                        .map((subtask) => (
+                          <li key={subtask.id}>
+                            {confirmUntickId === subtask.id ? (
+                              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                                <AlertTriangle
+                                  size={14}
+                                  className="text-amber-400 shrink-0"
+                                />
+                                <span className="flex-1 text-sm text-amber-800">
+                                  Mark <strong>{subtask.title}</strong> as
+                                  incomplete?
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmUntickId(null)}
+                                  className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setConfirmUntickId(null);
+                                    handleToggleSubtask(subtask.id);
+                                  }}
+                                  className="px-3 py-1 text-sm font-semibold bg-amber-400 text-white rounded-lg hover:bg-amber-500 transition shrink-0 cursor-pointer"
+                                >
+                                  Yes, undo
+                                </button>
+                              </div>
+                            ) : confirmDeleteSubtaskId === subtask.id ? (
+                              <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                                <AlertTriangle
+                                  size={14}
+                                  className="text-red-400 shrink-0"
+                                />
+                                <span className="flex-1 text-sm text-red-800">
+                                  Delete <strong>{subtask.title}</strong>? This
+                                  cannot be undone.
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setConfirmDeleteSubtaskId(null)
+                                  }
+                                  className="text-sm text-gray-500 hover:text-gray-700 transition cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setConfirmDeleteSubtaskId(null);
+                                    handleDeleteSubtask(subtask.id);
+                                  }}
+                                  className="px-3 py-1 text-sm font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition shrink-0 cursor-pointer"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3 group opacity-70">
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmUntickId(subtask.id)}
+                                  className="shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors cursor-pointer bg-emerald-500 border-emerald-500"
+                                >
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    viewBox="0 0 12 12"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M2 6l3 3 5-5"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </button>
+                                <span className="flex-1 text-sm line-through text-gray-400">
+                                  <LinkText text={subtask.title} />
+                                </span>
+                                {editingSubtaskId !== subtask.id && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => openCommentPanel(subtask)}
+                                      className={`transition-colors text-sm leading-none shrink-0 cursor-pointer ${activeSubtaskId === subtask.id && commentPanel ? "text-green-500" : "text-gray-400 hover:text-green-400"}`}
+                                      title="Comments"
+                                    >
+                                      <MessageCircleMore size={14} />
+                                      {(commentCounts[subtask.id] ?? 0) > 0 && (
+                                        <span className="text-[10px] font-semibold leading-none">
+                                          {commentCounts[subtask.id]}
+                                        </span>
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setConfirmDeleteSubtaskId(subtask.id)
+                                      }
+                                      className="text-gray-400 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
+                                      title="Delete"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                    </>
+                  )}
+                </ul>
+              </div>
+            )}
 
             {/* Add subtask form */}
             <form onSubmit={handleAddSubtask} className="flex gap-2 pt-1">
@@ -784,7 +993,7 @@ const handleEditComment = async (commentId) => {
                       {task.phaseLabel ?? "—"}
                     </span>
                   </div>
-                  
+
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                       Start date
@@ -803,8 +1012,7 @@ const handleEditComment = async (commentId) => {
                     </p>
                   </div>
 
-
-                   {/* Status — inline editable dropdown (no edit mode needed) */}
+                  {/* Status — inline editable dropdown (no edit mode needed) */}
                   <div className="space-y-0.5">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                       Status
@@ -1078,7 +1286,11 @@ const handleEditComment = async (commentId) => {
                       }`}
                     >
                       {localProgress === 100 && (
-                        <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                        <svg
+                          className="w-3 h-3 text-white"
+                          viewBox="0 0 12 12"
+                          fill="none"
+                        >
                           <path
                             d="M2 6l3 3 5-5"
                             stroke="currentColor"
@@ -1204,51 +1416,79 @@ const handleEditComment = async (commentId) => {
                 <div key={c.id} className="flex gap-2 items-start">
                   {/* Avatar */}
                   <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                    {(c.commenterName ?? c.commenterUsername ?? "?").charAt(0).toUpperCase()}
+                    {(c.commenterName ?? c.commenterUsername ?? "?")
+                      .charAt(0)
+                      .toUpperCase()}
                   </div>
 
-                  <div className="flex-1 min-w-0 relative">
+                  <div
+                    className={`flex-1 min-w-0 relative ${
+                      (c.userId === currentUser?.id ||
+                        currentUser?.role === "Admin") &&
+                      editingCommentId !== c.id
+                        ? "pr-16"
+                        : ""
+                    }`}
+                  >
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs font-semibold text-gray-700 truncate">
                         {c.commenterName ?? c.commenterUsername ?? "Unknown"}
                       </span>
                       <span className="text-[10px] text-gray-400 shrink-0">
                         {new Date(c.commentDate).toLocaleDateString("en-PH", {
-                          month: "short", day: "numeric",
-                          hour: "2-digit", minute: "2-digit",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </span>
                     </div>
 
                     {/* ── Inline edit mode ── */}
                     {editingCommentId === c.id ? (
-                      <div className="mt-1 flex gap-1.5">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         <input
                           autoFocus
                           value={editingCommentText}
-                          onChange={(e) => setEditingCommentText(e.target.value)}
+                          onChange={(e) =>
+                            setEditingCommentText(e.target.value)
+                          }
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) handleEditComment(c.id);
-                            if (e.key === "Escape") { setEditingCommentId(null); setEditingCommentText(""); }
+                            if (e.key === "Enter" && !e.shiftKey)
+                              handleEditComment(c.id);
+
+                            if (e.key === "Escape") {
+                              setEditingCommentId(null);
+                              setEditingCommentText("");
+                            }
                           }}
-                          className="flex-1 border border-blue-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                          className="w-full border border-blue-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
                           disabled={savingCommentEdit}
                         />
-                        <button
-                          type="button"
-                          onClick={() => handleEditComment(c.id)}
-                          disabled={savingCommentEdit || !editingCommentText.trim()}
-                          className="text-xs px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 cursor-pointer"
-                        >
-                          {savingCommentEdit ? "…" : "Save"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setEditingCommentId(null); setEditingCommentText(""); }}
-                          className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700 cursor-pointer"
-                        >
-                          Cancel
-                        </button>
+
+                        <div className="flex gap-2 ml-auto">
+                          <button
+                            type="button"
+                            onClick={() => handleEditComment(c.id)}
+                            disabled={
+                              savingCommentEdit || !editingCommentText.trim()
+                            }
+                            className="text-xs px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-40 cursor-pointer"
+                          >
+                            {savingCommentEdit ? "…" : "Save"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCommentId(null);
+                              setEditingCommentText("");
+                            }}
+                            className="text-xs px-3 py-1 text-gray-500 hover:text-gray-700 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-sm text-gray-700 wrap-break-words whitespace-pre-wrap mt-0.5">
@@ -1257,39 +1497,56 @@ const handleEditComment = async (commentId) => {
                     )}
 
                     {/* ── Action buttons — only shown for comment owner OR Admin── */}
-                    { (c.userId === currentUser?.id  || currentUser?.role === "Admin" )&& editingCommentId !== c.id && (
-                      confirmDeleteCommentId === c.id ? (
-                      <div className="flex items-center gap-2 mt-1.5 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">
-                        <span className="flex-1 text-xs text-red-700">Delete this comment?</span>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteCommentId(null)}
-                          className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer">
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setConfirmDeleteCommentId(null); handleDeleteComment(c.id); }}
-                          className="text-xs font-semibold text-red-500 hover:text-red-700 cursor-pointer">
-                          Delete
-                        </button>
+                    {(c.userId === currentUser?.id ||
+                      currentUser?.role === "Admin") &&
+                      editingCommentId !== c.id &&
+                      (confirmDeleteCommentId === c.id ? (
+                        <div className="flex items-center gap-2 mt-1.5 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">
+                          <span className="flex-1 text-xs text-red-700">
+                            Delete this comment?
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteCommentId(null)}
+                            className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmDeleteCommentId(null);
+                              handleDeleteComment(c.id);
+                            }}
+                            className="text-xs font-semibold text-red-500 hover:text-red-700 cursor-pointer"
+                          >
+                            Delete
+                          </button>
                         </div>
                       ) : (
-                          /* ── Normal edit / delete buttons ── */
-                      <div className="absolute top-1/2 right-0 -translate-y-1/2 flex gap-2">
-                        <button type="button"
-                          onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.comment ?? ""); }}
-                          className="text-blue-400 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
-                          <Pencil size={14} />
-                        </button>
-                        <button type="button"
-                          onClick={() => setConfirmDeleteCommentId(c.id)}  /* ← was handleDeleteComment directly */
-                          className="text-red-500 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      )
-                    )}
+                        /* ── Normal edit / delete buttons ── */
+                        <div className="absolute top-1/2 right-0 -translate-y-1/2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCommentId(c.id);
+                              setEditingCommentText(c.comment ?? "");
+                            }}
+                            className="text-blue-400 opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setConfirmDeleteCommentId(c.id)
+                            } /* ← was handleDeleteComment directly */
+                            className="text-red-500 opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
                   </div>
                 </div>
               ))

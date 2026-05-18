@@ -26,7 +26,7 @@ app.use("/api/severities", require("./routes/severities"));
 app.use("/api/tasks", require("./routes/tasks"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/attachments", require("./routes/attachments"));
-app.use("/api/activity-logs", require("./routes/activityLogs"));
+app.use("/api/activityLogs", require("./routes/activityLogs"));
 app.use("/api/projects", require("./routes/projects"));
 app.use("/api/subtask-comments", require("./routes/subtaskComments"));
 
