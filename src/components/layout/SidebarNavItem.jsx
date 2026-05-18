@@ -46,15 +46,15 @@ export default function SidebarNavItem({ item, isActive, collapsed, onClick }) {
   );
 
   const activeStyle = {
-    background: "rgba(59,130,246,0.18)",
-    color: "#93c5fd",
-    borderLeft: "2px solid #3b82f6",
+    background: "rgba(0,120,215,0.20)",
+    color: "#90c4ef",
+    borderLeft: "2px solid #0078D7",
     paddingLeft: "10px",
     fontWeight: 600,
   };
 
   const inactiveStyle = {
-    color: "#94a3b8",
+    color: "#7a9db8",
     borderLeft: "2px solid transparent",
   };
 
@@ -80,13 +80,13 @@ export default function SidebarNavItem({ item, isActive, collapsed, onClick }) {
       onMouseEnter={(e) => {
         if (!isActive) {
           e.currentTarget.style.background = "rgba(255,255,255,0.07)";
-          e.currentTarget.style.color = "#e2e8f0";
+          e.currentTarget.style.color = "#a0c4de";
         }
       }}
       onMouseLeave={(e) => {
         if (!isActive) {
           e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#94a3b8";
+          e.currentTarget.style.color = "#7a9db8";
         }
       }}
     >

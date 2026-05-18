@@ -34,7 +34,7 @@ export default function TaskCard({ task, onCardClick }) {
   const subtaskTotal = subtasks.length;
   const subtaskDone = subtasks.filter((s) => s.isDone || s.done).length;
   const [localProgress, setLocalProgress] = useState(
-    calcProgressFromSubtasks(subtasks) ?? task.progress ?? 0
+    calcProgressFromSubtasks(subtasks) ?? task.progress ?? 0,
   );
 
   useEffect(() => {
@@ -89,8 +89,8 @@ export default function TaskCard({ task, onCardClick }) {
       onMouseUp={handleMouseUp}
       className="cursor-grab active:cursor-grabbing select-none"
       style={{
-        background: "#fff",
-        border: "1px solid #e2e8f0",
+        background: "#FFFFFF",
+        border: "1px solid #DCDCDC",
         borderLeft: `3px solid ${severityColor}`,
         borderRadius: 12,
         padding: "12px 14px",
@@ -102,13 +102,13 @@ export default function TaskCard({ task, onCardClick }) {
         gap: 8,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "0 4px 12px rgba(30,64,175,0.1)";
-        e.currentTarget.style.borderColor = "#bfdbfe";
+        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,120,215,0.12)";
+        e.currentTarget.style.borderColor = "#a8d4f5";
         e.currentTarget.style.borderLeftColor = severityColor;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)";
-        e.currentTarget.style.borderColor = "#e2e8f0";
+        e.currentTarget.style.borderColor = "#DCDCDC";
         e.currentTarget.style.borderLeftColor = severityColor;
       }}
     >
@@ -185,7 +185,7 @@ export default function TaskCard({ task, onCardClick }) {
         style={{
           fontSize: 13,
           fontWeight: 600,
-          color: "#1e293b",
+          color: "#20476E",
           lineHeight: 1.4,
           margin: 0,
         }}
@@ -234,7 +234,7 @@ export default function TaskCard({ task, onCardClick }) {
               background:
                 progress === 100
                   ? "linear-gradient(90deg, #059669, #10b981)"
-                  : "linear-gradient(90deg, #1e40af, #3b82f6)",
+                  : "linear-gradient(90deg, #1C61A1, #0078D7)",
               transition: "width 0.3s ease",
             }}
           />
@@ -279,7 +279,7 @@ export default function TaskCard({ task, onCardClick }) {
           >
             {activeAssignee?.charAt(0)?.toUpperCase() ?? "?"}
           </div>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#4f6070" }}>
             {activeAssignee ?? "Unassigned"}
           </span>
         </div>
@@ -311,7 +311,7 @@ export default function TaskCard({ task, onCardClick }) {
               width: 20,
               height: 20,
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #1e3a5f, #3b82f6)",
+              background: "linear-gradient(135deg, #1C61A1, #0078D7)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

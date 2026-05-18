@@ -8,12 +8,18 @@ import KanbanColumn from "./KanbanColumn";
  * data-col on each droppable container holds the phase id.
  * onDragEnd receives (fromPhaseId, toPhaseId, taskId).
  */
-export default function KanbanBoard({ columns, tasks, renderKey, onDragEnd, onCardClick }) {
-  const colRefs      = useRef({});
+export default function KanbanBoard({
+  columns,
+  tasks,
+  renderKey,
+  onDragEnd,
+  onCardClick,
+}) {
+  const colRefs = useRef({});
   const sortablesRef = useRef({});
-  const scrollRef    = useRef(null);
+  const scrollRef = useRef(null);
 
-  const [showLeftFade,  setShowLeftFade]  = useState(false);
+  const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
 
   const updateFades = () => {
@@ -23,7 +29,9 @@ export default function KanbanBoard({ columns, tasks, renderKey, onDragEnd, onCa
     setShowRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
   };
 
-  useEffect(() => { updateFades(); }, [renderKey, columns]);
+  useEffect(() => {
+    updateFades();
+  }, [renderKey, columns]);
 
   useEffect(() => {
     columns.forEach(({ id }) => {
@@ -31,17 +39,17 @@ export default function KanbanBoard({ columns, tasks, renderKey, onDragEnd, onCa
       if (!el || sortablesRef.current[id]) return;
 
       sortablesRef.current[id] = Sortable.create(el, {
-        group:       "kanban",
-        animation:   150,
-        ghostClass:  "sortable-ghost",
+        group: "kanban",
+        animation: 150,
+        ghostClass: "sortable-ghost",
         chosenClass: "sortable-chosen",
         onEnd(evt) {
           const { from, to, oldIndex } = evt;
 
           // data-col holds the numeric phase id
           const fromPhaseId = Number(from.dataset.col);
-          const toPhaseId   = Number(to.dataset.col);
-          const taskId      = Number(evt.item.dataset.id);
+          const toPhaseId = Number(to.dataset.col);
+          const taskId = Number(evt.item.dataset.id);
 
           // Revert DOM — React + server are source of truth
           if (fromPhaseId === toPhaseId) {
@@ -65,25 +73,67 @@ export default function KanbanBoard({ columns, tasks, renderKey, onDragEnd, onCa
   return (
     <>
       <style>{`
-        .sortable-ghost  { opacity: 0.3; }
-        .sortable-chosen { box-shadow: 0 0 0 2px #3b82f6, 0 4px 16px rgba(59,130,246,.2); }
-        .kanban-scroll::-webkit-scrollbar       { height: 6px; }
-        .kanban-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-        .kanban-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
-        .kanban-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-      `}</style>
+  .sortable-ghost {
+    opacity: 0.3;
+  }
+
+  .sortable-chosen {
+    box-shadow: 0 0 0 2px #3b82f6,
+                0 4px 16px rgba(59,130,246,.2);
+  }
+
+  .kanban-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .kanban-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .kanban-scroll::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  .kanban-scroll::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* column scrollbar */
+  .kanban-column-scroll::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .kanban-column-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .kanban-column-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+
+  .kanban-column-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+`}</style>
 
       <div className="relative">
         {showLeftFade && (
           <div
             className="absolute left-0 top-0 bottom-6 w-16 z-10 pointer-events-none"
-            style={{ background: "linear-gradient(to right, #f9fafb, transparent)" }}
+            style={{
+              background: "linear-gradient(to right, #f9fafb, transparent)",
+            }}
           />
         )}
         {showRightFade && (
           <div
             className="absolute right-0 top-0 bottom-6 w-16 z-10 pointer-events-none"
-            style={{ background: "linear-gradient(to left, #f9fafb, transparent)" }}
+            style={{
+              background: "linear-gradient(to left, #f9fafb, transparent)",
+            }}
           />
         )}
 

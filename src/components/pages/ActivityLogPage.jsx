@@ -21,15 +21,15 @@ const inputClass =
 function SectionCard({ title, children, className = "" }) {
   return (
     <div
-      className={`rounded-xl overflow-hidden bg-white ${className}`}
+      className={`rounded-xl overflow-hidden bg-white  ${className}`}
       style={{
-        border: "1px solid #e2e8f0",
+        border: "1px solid #DCDCDC",
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
       <div
-        className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white"
-        style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
+        className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white bg-[#1C61A1]"
+        // style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
       >
         {title}
       </div>
@@ -209,8 +209,8 @@ export default function ActivityLogPage({ currentUser }) {
         ) : (
           <>
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
+              <thead className="bg-[#F0F8FF]">
+                <tr className="border-b border-[#DCDCDC]">
                   <th className="px-5 py-3 text-left text-xs">Task</th>
                   <th className="px-5 py-3 text-left text-xs">Action</th>
                   {!isDevOrQA && (
@@ -222,7 +222,10 @@ export default function ActivityLogPage({ currentUser }) {
 
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log.id} className="border-b">
+                  <tr
+                    key={log.id}
+                    className="border-b border-[#DCDCDC] odd:bg-[#FFFFFF] even:bg-[#F0F8FF]"
+                  >
                     <td className="px-5 py-3">{log.taskTitle}</td>
                     <td className="px-5 py-3">{log.action}</td>
                     {!isDevOrQA && (

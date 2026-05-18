@@ -54,19 +54,19 @@ const SectionLabel = ({ children, collapsed, onToggle }) => (
     className="flex items-center gap-3 mb-3 w-full text-left group"
   >
     <span
-      className="text-xs font-black uppercase tracking-widest text-slate-400"
-      style={{ letterSpacing: "0.12em" }}
+      className="text-xs font-black uppercase tracking-widest"
+      style={{ letterSpacing: "0.12em", color: "#1C61A1" }}
     >
       {children}
     </span>
-    <div className="flex-1 h-px" style={{ background: "#e2e8f0" }} />
+    <div className="flex-1 h-px" style={{ background: "#DCDCDC" }} />
     <svg
       width="12"
       height="12"
       viewBox="0 0 12 12"
       fill="none"
       style={{
-        color: "#94a3b8",
+        color: "#1C61A1",
         transform: collapsed ? "rotate(-90deg)" : "rotate(0deg)",
         transition: "transform 0.2s ease",
         flexShrink: 0,
@@ -559,18 +559,18 @@ export default function AppShell({ currentUser, logout }) {
       <div
         className="min-h-screen flex items-center justify-center"
         style={{
-          background: "#f8fafc",
+          background: "#f5f9fe",
           fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif",
         }}
       >
         <div className="flex flex-col items-center gap-3">
           <div
             className="w-8 h-8 rounded-full border-2 animate-spin"
-            style={{ borderColor: "#3b82f6", borderTopColor: "transparent" }}
+            style={{ borderColor: "#0078D7", borderTopColor: "transparent" }}
           />
           <p
             className="text-xs font-bold uppercase tracking-widest"
-            style={{ color: "#94a3b8" }}
+            style={{ color: "#1C61A1" }}
           >
             Loading board…
           </p>

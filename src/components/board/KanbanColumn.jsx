@@ -3,19 +3,35 @@ import TaskCard from "./TaskCard";
 export default function KanbanColumn({ col, tasks, colRef, onCardClick }) {
   return (
     <div
-      className="shrink-0 w-60 rounded-xl overflow-hidden bg-white"
+      className="shrink-0 w-60 rounded-xl overflow-hidden flex flex-col"
       style={{
-        border: "1px solid #e2e8f0",
-        borderTop: `3px solid ${col.color || "#1e40af"}`,
+        minHeight: "200px",
+        maxHeight: "400px",
+        background: "#F0F8FF",
+        border: `1px solid #DCDCDC`,
+        borderTop: `3px solid ${col.color || "#0078D7"}`,
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
       {/* Header */}
-      <div className="px-4 py-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-600 truncate pr-2">
+      <div
+        className="px-4 py-3 flex items-center justify-between"
+        style={{ background: "#FFFFFF", borderBottom: "1px solid #DCDCDC" }}
+      >
+        <span
+          className="text-xs font-semibold truncate pr-2"
+          style={{ color: "#20476E" }}
+        >
           {col.label}
         </span>
-        <span className="shrink-0 text-xs bg-slate-100 text-slate-400 rounded-full px-2 py-0.5 font-medium">
+        <span
+          className="shrink-0 text-xs rounded-full px-2 py-0.5 font-medium"
+          style={{
+            background: "#F0F8FF",
+            color: "#1C61A1",
+            border: "1px solid #DCDCDC",
+          }}
+        >
           {tasks.length}
         </span>
       </div>
@@ -24,7 +40,14 @@ export default function KanbanColumn({ col, tasks, colRef, onCardClick }) {
       <div
         ref={colRef}
         data-col={col.id}
-        className="px-2 pb-3 pt-2 space-y-2 min-h-32"
+        className="
+    flex-1
+    px-2 pb-3 pt-2
+    space-y-2
+    overflow-y-auto
+    overflow-x-hidden
+    kanban-column-scroll
+  "
       >
         {tasks.map((task) => (
           <TaskCard key={task.id} task={task} onCardClick={onCardClick} />

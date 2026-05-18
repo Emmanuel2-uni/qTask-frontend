@@ -265,7 +265,7 @@ export default function ProjectsPage({ users }) {
                   {projects.map((project, i) => (
                     <tr
                       key={project.id}
-                      className="transition-colors hover:bg-slate-50"
+                      className="transition-colors hover:bg-slate-50 odd:bg-[#FFFFF] even:bg-[#F0F8FF]"
                       style={{
                         borderBottom:
                           i < projects.length - 1
@@ -394,7 +394,10 @@ export default function ProjectsPage({ users }) {
                           <ActionButton
                             icon={<Pencil size={14} />}
                             label="Edit"
-                            onClick={() => {setEditTarget(project); setEditKey((k) => k + 1); }}
+                            onClick={() => {
+                              setEditTarget(project);
+                              setEditKey((k) => k + 1);
+                            }}
                             color="blue"
                           />
                           <ActionButton
@@ -429,7 +432,10 @@ export default function ProjectsPage({ users }) {
           project={editTarget}
           users={users}
           onSave={handleEdit}
-          onClose={() => { setEditTarget(null); setEditKey((k) => k + 1); }}
+          onClose={() => {
+            setEditTarget(null);
+            setEditKey((k) => k + 1);
+          }}
         />
       )}
       {deleteTarget && (

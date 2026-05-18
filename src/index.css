@@ -1,1 +1,20 @@
-@import 'tailwindcss'
+@import 'tailwindcss';
+
+/* ── QTECH System Theme ─────────────────────────────────────────
+   Primary Brand  #0078D7  focus rings, primary buttons, links
+   Primary Dark   #1C61A1  main headers, section titles
+   Primary Deep   #20476E  sidebar, dark surfaces
+   Surface/Base   #FFFFFF  cards, table rows, inputs
+   Alt Row        #F0F8FF  zebra-stripe alternate rows
+   Borders        #DCDCDC  grid lines, input borders, dividers
+──────────────────────────────────────────────────────────────── */
+:root {
+  --brand:        #0078D7;
+  --brand-dark:   #1C61A1;
+  --brand-deep:   #20476E;
+  --surface:      #FFFFFF;
+  --row-alt:      #F0F8FF;
+  --border:       #DCDCDC;
+  --text-primary: #1a2332;
+  --text-muted:   #4f6070;
+}

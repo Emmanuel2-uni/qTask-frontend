@@ -1,19 +1,42 @@
 import { useState } from "react";
-import { FolderKanban, LayoutGrid, Users, BarChart2, ArrowRight, Eye, EyeOff } from "lucide-react";
+import {
+  FolderKanban,
+  LayoutGrid,
+  Users,
+  BarChart2,
+  ArrowRight,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { loginUser } from "../../services/api";
 
 const features = [
-  { icon: LayoutGrid, label: "Kanban Boards",    desc: "Drag-and-drop task flows",   accent: "#3b82f6" },
-  { icon: Users,      label: "Team Workspaces",  desc: "Real-time collaboration",    accent: "#8b5cf6" },
-  { icon: BarChart2,  label: "Progress Reports", desc: "Velocity & burndown charts", accent: "#f59e0b" },
+  {
+    icon: LayoutGrid,
+    label: "Kanban Boards",
+    desc: "Drag-and-drop task flows",
+    accent: "#3b82f6",
+  },
+  {
+    icon: Users,
+    label: "Team Workspaces",
+    desc: "Real-time collaboration",
+    accent: "#8b5cf6",
+  },
+  {
+    icon: BarChart2,
+    label: "Progress Reports",
+    desc: "Velocity & burndown charts",
+    accent: "#f59e0b",
+  },
 ];
 
 export default function LoginPage() {
   const { login } = useAuth();
 
-  const [form,    setForm]    = useState({ username: "", password: "" });
-  const [error,   setError]   = useState(null);
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -115,9 +138,9 @@ export default function LoginPage() {
           box-shadow: 0 0 20px rgba(59,130,246,0.4);
         }
         .logo-text {
-          font-family: 'Syne', sans-serif;
+          font-family: 'Segoe UI', system-ui, sans-serif;
           font-weight: 800;
-          font-size: 20px;
+          font-size: 35px;
           color: #fff;
           letter-spacing: -0.3px;
         }
@@ -129,7 +152,7 @@ export default function LoginPage() {
           color: #475569;
         }
         .headline {
-          font-family: 'Syne', sans-serif;
+          font-family: 'Segoe UI', system-ui, sans-serif;
           font-weight: 800;
           font-size: 36px;
           line-height: 1.1;
@@ -257,8 +280,8 @@ export default function LoginPage() {
           background: rgba(255, 255, 255, 0.02);
         }
         .form-card-title {
-          font-family: 'Syne', sans-serif;
-          font-weight: 800;
+          font-family: 'Segoe UI', system-ui, sans-serif;
+          font-weight: 700;
           font-size: 16px;
           color: #f1f5f9;
           letter-spacing: -0.2px;
@@ -420,7 +443,6 @@ export default function LoginPage() {
 
       <div className="qt">
         <div className="qt-inner">
-
           {/* Brand */}
           <div className="qt-brand">
             <div className="logo-wrap">
@@ -432,19 +454,28 @@ export default function LoginPage() {
                 <div className="logo-sub">Project Management</div>
               </div>
             </div>
-            <h1 className="headline">Ship projects <em>faster,</em> together.</h1>
-            <p className="subhead">Organise tasks, track progress, and keep your whole team in sync.</p>
+            <h1 className="headline">
+              Ship projects <em>faster,</em> together.
+            </h1>
+            <p className="subhead">
+              Organise tasks, track progress, and keep your whole team in sync.
+            </p>
           </div>
 
           {/* Body */}
           <div className="qt-body">
-
             {/* Features */}
             <div className="qt-features">
               {features.map(({ icon: Icon, label, desc, accent }) => (
                 <div className="feature-card" key={label}>
-                  <div className="feature-card-glow" style={{ background: accent }} />
-                  <div className="feature-icon-wrap" style={{ background: `${accent}1a` }}>
+                  <div
+                    className="feature-card-glow"
+                    style={{ background: accent }}
+                  />
+                  <div
+                    className="feature-icon-wrap"
+                    style={{ background: `${accent}1a` }}
+                  >
                     <Icon size={16} color={accent} />
                   </div>
                   <div className="feature-text">
@@ -468,38 +499,68 @@ export default function LoginPage() {
                 {error && <div className="error-banner">{error}</div>}
                 <form onSubmit={handleSubmit}>
                   <div className="field-group">
-                    <label className="field-label" htmlFor="username">Username</label>
+                    <label className="field-label" htmlFor="username">
+                      Username
+                    </label>
                     <input
-                      id="username" className="field-input" name="username" type="text"
-                      autoComplete="username" value={form.username}
-                      onChange={handleChange} disabled={loading} placeholder="Username"
+                      id="username"
+                      className="field-input"
+                      name="username"
+                      type="text"
+                      autoComplete="username"
+                      value={form.username}
+                      onChange={handleChange}
+                      disabled={loading}
+                      placeholder="Username"
                     />
                   </div>
                   <div className="field-group">
-                    <label className="field-label" htmlFor="password">Password</label>
+                    <label className="field-label" htmlFor="password">
+                      Password
+                    </label>
                     <div className="field-input-wrap">
                       <input
-                        id="password" className="field-input" name="password"
+                        id="password"
+                        className="field-input"
+                        name="password"
                         type={showPassword ? "text" : "password"}
-                        autoComplete="current-password" value={form.password}
-                        onChange={handleChange} disabled={loading} placeholder="Password"
+                        autoComplete="current-password"
+                        value={form.password}
+                        onChange={handleChange}
+                        disabled={loading}
+                        placeholder="Password"
                       />
                       <button
                         type="button"
                         className="field-input-icon"
                         onClick={() => setShowPassword(!showPassword)}
                         tabIndex={-1}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                       >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {showPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
                       </button>
                     </div>
                   </div>
-                  <button type="submit" className="btn-submit" disabled={loading}>
-                    {loading
-                      ? <><span className="spinner" /> Signing in…</>
-                      : <>Sign in <ArrowRight size={15} /></>
-                    }
+                  <button
+                    type="submit"
+                    className="btn-submit"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner" /> Signing in…
+                      </>
+                    ) : (
+                      <>
+                        Sign in <ArrowRight size={15} />
+                      </>
+                    )}
                   </button>
                 </form>
                 <div className="form-footer">
@@ -507,7 +568,6 @@ export default function LoginPage() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
 

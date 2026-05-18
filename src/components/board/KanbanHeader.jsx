@@ -2,25 +2,6 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, SlidersHorizontal, X } from "lucide-react";
 import { fetchProjectUsers } from "../../services/api";
 
-/**
- * KanbanHeader
- *
- * Props:
- *   title           — page title
- *   subtitle        — page subtitle
- *   isPM            — whether the current user is PM/Admin
- *   activeProject   — the currently selected project object
- *   onBack          — called when back button is clicked
- *   onAddTask       — called when + Add task is clicked
- *
- *   // Filter props
- *   users           — array of { id, name } for assignee filter
- *   severities      — array of { id, label } for severity filter
- *   statuses        — array of { id, label } for status filter
- *   filters         — { userId, severityId, statusId }
- *   onFilterChange  — (key, value) => void
- *   onClearFilters  — () => void
- */
 export default function KanbanHeader({
   title,
   subtitle,
@@ -36,8 +17,6 @@ export default function KanbanHeader({
   onClearFilters,
 }) {
   const [showFilters, setShowFilters] = useState(false);
-
-  // -- Project-scoped users for the Dev filter --------------------
   const [projectUsers, setProjectUsers] = useState([]);
 
   useEffect(() => {
@@ -47,16 +26,30 @@ export default function KanbanHeader({
     }
     fetchProjectUsers(activeProject.id)
       .then((data) =>
-        // ProjectUserGetDto shape: { id, projectId, userId, role, userName }
-        setProjectUsers(data.map((pu) => ({ id: pu.userId, name: pu.name })))
+        setProjectUsers(data.map((pu) => ({ id: pu.userId, name: pu.name }))),
       )
       .catch(() => setProjectUsers([]));
   }, [activeProject?.id]);
+
   const hasActiveFilters =
     filters.userId || filters.severityId || filters.statusId;
+  const filterCount = [
+    filters.userId,
+    filters.severityId,
+    filters.statusId,
+  ].filter(Boolean).length;
 
-  // --------------------------------------------------------
-
+  const selectClass = {
+    border: "1px solid #DCDCDC",
+    borderRadius: 8,
+    padding: "6px 12px",
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#20476E",
+    background: "#FFFFFF",
+    outline: "none",
+    cursor: "pointer",
+  };
 
   return (
     <div className="mb-6 space-y-3">
@@ -68,15 +61,15 @@ export default function KanbanHeader({
               onClick={onBack}
               className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest px-3 py-2 rounded-lg transition-all"
               style={{
-                background: "#f1f5f9",
-                color: "#64748b",
-                border: "1px solid #e2e8f0",
+                background: "#F0F8FF",
+                color: "#1C61A1",
+                border: "1px solid #DCDCDC",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#e2e8f0")
+                (e.currentTarget.style.background = "#daeeff")
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "#f1f5f9")
+                (e.currentTarget.style.background = "#F0F8FF")
               }
             >
               <ArrowLeft size={12} />
@@ -84,14 +77,23 @@ export default function KanbanHeader({
             </button>
           )}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-1"
+              style={{ color: "#4f6070" }}
+            >
               {subtitle}
             </p>
-            <h1 className="text-2xl font-black text-slate-800 leading-none">
+            <h1
+              className="text-2xl font-black leading-none"
+              style={{ color: "#20476E" }}
+            >
               {title}
             </h1>
             {isPM && activeProject && (
-              <p className="text-[11px] text-slate-400 font-medium mt-1">
+              <p
+                className="text-[11px] font-medium mt-1"
+                style={{ color: "#4f6070" }}
+              >
                 {activeProject.clientName || ""}
               </p>
             )}
@@ -107,10 +109,10 @@ export default function KanbanHeader({
                 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest px-3 py-2 rounded-lg transition-all"
                 style={{
                   background:
-                    showFilters || hasActiveFilters ? "#eff6ff" : "#f1f5f9",
+                    showFilters || hasActiveFilters ? "#e8f4ff" : "#F0F8FF",
                   color:
-                    showFilters || hasActiveFilters ? "#1d4ed8" : "#64748b",
-                  border: `1px solid ${showFilters || hasActiveFilters ? "#bfdbfe" : "#e2e8f0"}`,
+                    showFilters || hasActiveFilters ? "#1C61A1" : "#20476E",
+                  border: `1px solid ${showFilters || hasActiveFilters ? "#a8d4f5" : "#DCDCDC"}`,
                 }}
               >
                 <SlidersHorizontal size={12} />
@@ -118,15 +120,9 @@ export default function KanbanHeader({
                 {hasActiveFilters && (
                   <span
                     className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black"
-                    style={{ background: "#1d4ed8", color: "#fff" }}
+                    style={{ background: "#0078D7", color: "#fff" }}
                   >
-                    {
-                      [
-                        filters.userId,
-                        filters.severityId,
-                        filters.statusId,
-                      ].filter(Boolean).length
-                    }
+                    {filterCount}
                   </span>
                 )}
               </button>
@@ -135,7 +131,7 @@ export default function KanbanHeader({
                 onClick={onAddTask}
                 className="text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
                 style={{
-                  background: "linear-gradient(135deg, #1e40af, #3b82f6)",
+                  background: "linear-gradient(135deg, #1C61A1, #0078D7)",
                   color: "#fff",
                 }}
               >
@@ -150,11 +146,14 @@ export default function KanbanHeader({
       {showFilters && (
         <div
           className="flex flex-wrap gap-3 items-end px-4 py-3 rounded-xl"
-          style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
+          style={{ background: "#F0F8FF", border: "1px solid #DCDCDC" }}
         >
-          {/* Assignee / User */}
-          <div className="space-y-1 space-x-2">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">
+          {/* Dev / User */}
+          <div className="space-y-1">
+            <label
+              className="block text-xs font-black uppercase tracking-widest"
+              style={{ color: "#4f6070" }}
+            >
               Dev
             </label>
             <select
@@ -165,10 +164,10 @@ export default function KanbanHeader({
                   e.target.value ? Number(e.target.value) : null,
                 )
               }
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              style={selectClass}
             >
               <option value="">All users</option>
-              {projectUsers.map((u) => ( // changed users.map => projectUsers.map
+              {projectUsers.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>
@@ -177,8 +176,11 @@ export default function KanbanHeader({
           </div>
 
           {/* Severity */}
-          <div className="space-y-1 space-x-2">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">
+          <div className="space-y-1">
+            <label
+              className="block text-xs font-black uppercase tracking-widest"
+              style={{ color: "#4f6070" }}
+            >
               Severity
             </label>
             <select
@@ -189,7 +191,7 @@ export default function KanbanHeader({
                   e.target.value ? Number(e.target.value) : null,
                 )
               }
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              style={selectClass}
             >
               <option value="">All severities</option>
               {severities.map((s) => (
@@ -201,8 +203,11 @@ export default function KanbanHeader({
           </div>
 
           {/* Status */}
-          <div className="space-y-1 space-x-2">
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400">
+          <div className="space-y-1">
+            <label
+              className="block text-xs font-black uppercase tracking-widest"
+              style={{ color: "#4f6070" }}
+            >
               Status
             </label>
             <select
@@ -213,7 +218,7 @@ export default function KanbanHeader({
                   e.target.value ? Number(e.target.value) : null,
                 )
               }
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              style={selectClass}
             >
               <option value="">All statuses</option>
               {statuses.map((s) => (

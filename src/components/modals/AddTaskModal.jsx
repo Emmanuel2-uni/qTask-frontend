@@ -22,13 +22,15 @@ export default function AddTaskModal({
   const defaultPhase = phases.find((p) => p.isDefault) ?? phases[0];
 
   // Filter projectUsers by role — fall back to all users if no project is selected
-  const devUsers = projectUsers.length > 0
-    ? projectUsers.filter((u) => u.role === "Developer")
-    : users.filter((u) => u.role === "Developer");
+  const devUsers =
+    projectUsers.length > 0
+      ? projectUsers.filter((u) => u.role === "Developer")
+      : users.filter((u) => u.role === "Developer");
 
-  const qaUsers = projectUsers.length > 0
-    ? projectUsers.filter((u) => u.role === "QA")
-    : users.filter((u) => u.role === "QA");
+  const qaUsers =
+    projectUsers.length > 0
+      ? projectUsers.filter((u) => u.role === "QA")
+      : users.filter((u) => u.role === "QA");
 
   const [form, setForm] = useState({
     title: "",
@@ -36,7 +38,7 @@ export default function AddTaskModal({
     assigneeId: "",
     qaAssigneeId: "",
     severityId: "",
-    startDate: "", 
+    startDate: "",
     targetDate: "",
   });
   const [adding, setAdding] = useState(false);
@@ -89,8 +91,6 @@ export default function AddTaskModal({
 
   //   getProjectUsers();
   // }, []);
-
-console.log(devUsers)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
