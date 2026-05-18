@@ -99,6 +99,7 @@ export default function TaskDetailModal({
   // When there are no subtasks, progress is controlled by a direct toggle (0 or 100).
   // When subtasks exist, it's always derived from them.
   const [localProgress, setLocalProgress] = useState(task.progress ?? 0);
+
   const progress =
     localSubtasks.length > 0
       ? (calcProgressFromSubtasks(localSubtasks) ?? 0)
@@ -296,6 +297,7 @@ export default function TaskDetailModal({
     setProgressSaving(true);
     try {
       await updateTaskProgress(task.id, newProgress);
+      onUpdate(task.id, { progress: newProgress }); // propagate to parent
     } catch {
       setLocalProgress(localProgress); // revert on failure
     } finally {

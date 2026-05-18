@@ -910,6 +910,10 @@ export default function AppShell({ currentUser, logout }) {
           onUpdate={(taskId, fields) => {
             if (fields.subtasks !== undefined)
               return handleUpdateSubtasks(taskId, fields.subtasks);
+            if (fields.progress !== undefined)
+              setTasks((prev) =>
+                prev.map((t) => (t.id === taskId ? { ...t, progress: fields.progress } : t))
+              );
           }}
           onEdit={handleEditTask}
           onDelete={handleDeleteTask}

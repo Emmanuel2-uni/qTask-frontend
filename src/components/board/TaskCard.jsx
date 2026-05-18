@@ -33,7 +33,15 @@ export default function TaskCard({ task, onCardClick }) {
   const subtasks = task.subtasks ?? [];
   const subtaskTotal = subtasks.length;
   const subtaskDone = subtasks.filter((s) => s.isDone || s.done).length;
-  const progress = calcProgressFromSubtasks(subtasks) ?? task.progress ?? 0;
+  const [localProgress, setLocalProgress] = useState(
+    calcProgressFromSubtasks(subtasks) ?? task.progress ?? 0
+  );
+
+  useEffect(() => {
+    setLocalProgress(calcProgressFromSubtasks(subtasks) ?? task.progress ?? 0);
+  }, [task.progress, task.subtasks]);
+
+  const progress = localProgress; // keeps all JSX below untouched
 
   const severityColor = getSeverityColor(
     task.severityColor,
