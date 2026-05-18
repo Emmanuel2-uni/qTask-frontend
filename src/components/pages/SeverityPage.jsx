@@ -34,11 +34,11 @@ const DEFAULT_COLOR = "#6b7280";
 
 // ── Color mapping for severity levels ───────────────────────
 const SEVERITY_COLORS = {
-  High:     { bg: "#fef2f2", color: "#ef4444", border: "#ef444430" },
-  Medium:   { bg: "#fefce8", color: "#eab308", border: "#eab30830" },
-  Low:      { bg: "#f0fdf4", color: "#22c55e", border: "#22c55e30" },
+  High: { bg: "#fef2f2", color: "#ef4444", border: "#ef444430" },
+  Medium: { bg: "#fefce8", color: "#eab308", border: "#eab30830" },
+  Low: { bg: "#f0fdf4", color: "#22c55e", border: "#22c55e30" },
   Critical: { bg: "#fef2f2", color: "#dc2626", border: "#dc262630" },
-  Minor:    { bg: "#eff6ff", color: "#3b82f6", border: "#3b82f630" },
+  Minor: { bg: "#eff6ff", color: "#3b82f6", border: "#3b82f630" },
 };
 
 // ── KPI Card component ─────────────────────────────────────
@@ -47,7 +47,7 @@ function KpiCard({ label, value, accent, sub, icon: Icon }) {
     <div
       className="rounded-xl p-4 flex flex-col gap-1 relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #0f172a 60%, #1e3a5f)",
+        background: "linear-gradient(135deg, #20476E ,#1C61A1)",
         border: `1px solid ${accent}40`,
       }}
     >
@@ -60,9 +60,13 @@ function KpiCard({ label, value, accent, sub, icon: Icon }) {
           <Icon size={32} color={accent} />
         </div>
       )}
-      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</span>
-      <span className="text-3xl font-black text-white leading-none">{value}</span>
-      {sub && <span className="text-[10px] text-slate-500 mt-0.5">{sub}</span>}
+      <span className="text-sm font-bold uppercase tracking-widest text-white">
+        {label}
+      </span>
+      <span className="text-3xl font-black text-white leading-none">
+        {value}
+      </span>
+      {sub && <span className="text-xs text-gray-200 mt-0.5">{sub}</span>}
     </div>
   );
 }
@@ -72,11 +76,14 @@ function SectionCard({ title, toolbar, children }) {
   return (
     <div
       className="rounded-xl overflow-hidden bg-white"
-      style={{ border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
+      style={{
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+      }}
     >
       <div
         className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white"
-        style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
+        style={{ background: "linear-gradient(90deg, #20476E ,#1C61A1)" }}
       >
         {title}
       </div>
@@ -96,10 +103,12 @@ function SectionCard({ title, toolbar, children }) {
 // ── Severity Badge component ────────────────────────────────
 function SeverityBadge({ label, color }) {
   const severityKey = Object.keys(SEVERITY_COLORS).find(
-    key => key.toLowerCase() === label?.toLowerCase()
+    (key) => key.toLowerCase() === label?.toLowerCase(),
   );
-  const cfg = severityKey ? SEVERITY_COLORS[severityKey] : { bg: "#f1f5f9", color: "#64748b", border: "#64748b30" };
-  
+  const cfg = severityKey
+    ? SEVERITY_COLORS[severityKey]
+    : { bg: "#f1f5f9", color: "#64748b", border: "#64748b30" };
+
   return (
     <div className="flex items-center gap-2">
       <div
@@ -108,7 +117,11 @@ function SeverityBadge({ label, color }) {
       />
       <span
         className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"
-        style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
+        style={{
+          background: cfg.bg,
+          color: cfg.color,
+          border: `1px solid ${cfg.border}`,
+        }}
       >
         {label}
       </span>
@@ -118,8 +131,8 @@ function SeverityBadge({ label, color }) {
 
 // ── Action Button component ─────────────────────────────────
 const ACTION_COLORS = {
-  blue:   "text-blue-400 hover:text-blue-600 hover:bg-blue-50",
-  red:    "text-red-400 hover:text-red-600 hover:bg-red-50",
+  blue: "text-blue-400 hover:text-blue-600 hover:bg-blue-50",
+  red: "text-red-400 hover:text-red-600 hover:bg-red-50",
 };
 
 function ActionButton({ icon, label, onClick, color }) {
@@ -127,7 +140,10 @@ function ActionButton({ icon, label, onClick, color }) {
     <button
       onClick={onClick}
       title={label}
-      className={clsx("p-1.5 rounded-lg transition-colors", ACTION_COLORS[color])}
+      className={clsx(
+        "p-1.5 rounded-lg transition-colors",
+        ACTION_COLORS[color],
+      )}
     >
       {icon}
     </button>
@@ -176,7 +192,7 @@ function SeverityModal({ mode, initial, onConfirm, onClose }) {
 
         {/* Label */}
         <div className="space-y-1">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
             Label
           </label>
           <input
@@ -195,7 +211,7 @@ function SeverityModal({ mode, initial, onConfirm, onClose }) {
 
         {/* Color */}
         <div className="space-y-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
             Color
           </label>
           <div className="flex items-center gap-2 flex-wrap">
@@ -373,20 +389,27 @@ export default function SeverityPage() {
 
   // ── KPIs ─────────────────────────────────────────────────
   const totalSeverities = severities.length;
-  const highSeverities = severities.filter(s => 
-    s.label?.toLowerCase().includes('high') || 
-    s.label?.toLowerCase().includes('critical')
+  const highSeverities = severities.filter(
+    (s) =>
+      s.label?.toLowerCase().includes("high") ||
+      s.label?.toLowerCase().includes("critical"),
   ).length;
-  const avgSortOrder = severities.length > 0 
-    ? Math.round(severities.reduce((sum, s) => sum + (s.sortOrder || 0), 0) / severities.length)
-    : 0;
+  const avgSortOrder =
+    severities.length > 0
+      ? Math.round(
+          severities.reduce((sum, s) => sum + (s.sortOrder || 0), 0) /
+            severities.length,
+        )
+      : 0;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-          <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">Loading severities</p>
+          <p className="text-slate-400 text-xs font-bold tracking-widest uppercase">
+            Loading severities
+          </p>
         </div>
       </div>
     );
@@ -406,16 +429,19 @@ export default function SeverityPage() {
         {/* Page header */}
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Configuration</p>
-            <h1 className="text-2xl font-black text-slate-800 leading-none">Severity Levels</h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+              Configuration
+            </p>
+            <h1 className="text-2xl font-black text-slate-800 leading-none">
+              Severity Levels
+            </h1>
             <p className="text-xs text-slate-400 mt-1.5">
               Manage severity levels used when creating tasks
             </p>
           </div>
           <button
             onClick={() => setAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl transition hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1e3a5f, #1e40af)", border: "1px solid #1e40af40" }}
+            className="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl transition hover:opacity-90 border border-[#DCDCDC] bg-[#0078D7]"
           >
             <Plus size={15} />
             Add Severity
@@ -424,26 +450,26 @@ export default function SeverityPage() {
 
         {/* KPI row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <KpiCard 
-            label="Total Severities" 
-            value={totalSeverities} 
-            accent="#3b82f6" 
-            sub="configured levels" 
-            icon={Layers} 
+          <KpiCard
+            label="Total Severities"
+            value={totalSeverities}
+            accent="#3b82f6"
+            sub="configured levels"
+            icon={Layers}
           />
-          <KpiCard 
-            label="High Priority" 
-            value={highSeverities} 
-            accent="#ef4444" 
-            sub="critical & high levels" 
-            icon={AlertTriangle} 
+          <KpiCard
+            label="High Priority"
+            value={highSeverities}
+            accent="#ef4444"
+            sub="critical & high levels"
+            icon={AlertTriangle}
           />
-          <KpiCard 
-            label="Avg Sort Order" 
-            value={avgSortOrder} 
-            accent="#8b5cf6" 
-            sub="average priority order" 
-            icon={TrendingUp} 
+          <KpiCard
+            label="Avg Sort Order"
+            value={avgSortOrder}
+            accent="#8b5cf6"
+            sub="average priority order"
+            icon={TrendingUp}
           />
         </div>
 
@@ -465,23 +491,31 @@ export default function SeverityPage() {
           ) : severities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center">
-                <AlertTriangle size={28} className="text-slate-300" strokeWidth={1.5} />
+                <AlertTriangle
+                  size={28}
+                  className="text-slate-300"
+                  strokeWidth={1.5}
+                />
               </div>
-              <p className="text-sm text-slate-400">No severities yet — add one to get started.</p>
+              <p className="text-sm text-slate-400">
+                No severities yet — add one to get started.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    {["Severity", "Color", "Sort Order", "Actions"].map((col) => (
-                      <th
-                        key={col}
-                        className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap"
-                      >
-                        {col}
-                      </th>
-                    ))}
+                    {["Severity", "Color", "Sort Order", "Actions"].map(
+                      (col) => (
+                        <th
+                          key={col}
+                          className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap"
+                        >
+                          {col}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -490,7 +524,10 @@ export default function SeverityPage() {
                       key={sev.id}
                       className="transition-colors hover:bg-slate-50"
                       style={{
-                        borderBottom: i < severities.length - 1 ? "1px solid #f8fafc" : "none",
+                        borderBottom:
+                          i < severities.length - 1
+                            ? "1px solid #f8fafc"
+                            : "none",
                       }}
                     >
                       <td className="px-5 py-3.5">
@@ -500,7 +537,9 @@ export default function SeverityPage() {
                         <div className="flex items-center gap-2">
                           <div
                             className="w-5 h-5 rounded-full border border-slate-200"
-                            style={{ backgroundColor: sev.color || DEFAULT_COLOR }}
+                            style={{
+                              backgroundColor: sev.color || DEFAULT_COLOR,
+                            }}
                           />
                           <span className="text-xs text-slate-500 font-mono">
                             {sev.color || DEFAULT_COLOR}
@@ -514,17 +553,17 @@ export default function SeverityPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1">
-                          <ActionButton 
-                            icon={<Pencil size={14} />} 
-                            label="Edit" 
-                            onClick={() => setEditTarget(sev)} 
-                            color="blue" 
+                          <ActionButton
+                            icon={<Pencil size={14} />}
+                            label="Edit"
+                            onClick={() => setEditTarget(sev)}
+                            color="blue"
                           />
-                          <ActionButton 
-                            icon={<Trash2 size={14} />} 
-                            label="Delete" 
-                            onClick={() => setDeleteTarget(sev)} 
-                            color="red" 
+                          <ActionButton
+                            icon={<Trash2 size={14} />}
+                            label="Delete"
+                            onClick={() => setDeleteTarget(sev)}
+                            color="red"
                           />
                         </div>
                       </td>

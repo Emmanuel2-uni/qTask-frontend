@@ -15,8 +15,8 @@ export default function DoneModal({ taskName, onConfirm, onCancel }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-800">Confirm completion</h2>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" style={{ border: "1px solid #DCDCDC" }}>
+        <h2 className="font-semibold" style={{ fontSize: "var(--fs-lg)", color: "#20476E" }}>Confirm completion</h2>
 
         <p className="text-sm text-gray-500">
           You are marking{" "}
@@ -32,7 +32,8 @@ export default function DoneModal({ taskName, onConfirm, onCancel }) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+            className="w-full rounded-lg px-3 py-2 text-sm"
+          style={{ border: "1px solid #DCDCDC" }}
           />
         </div>
 
@@ -45,7 +46,8 @@ export default function DoneModal({ taskName, onConfirm, onCancel }) {
           </button>
           <button
             onClick={() => onConfirm(date)}
-            className="px-4 py-2 text-sm font-semibold bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition"
+            className="px-4 py-2 text-sm font-semibold rounded-lg transition"
+            style={{ background: "linear-gradient(135deg, #059669, #10b981)", color: "#fff" }}
           >
             Mark as done
           </button>

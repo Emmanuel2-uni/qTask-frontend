@@ -168,6 +168,9 @@ export default function TaskDetailModal({
       }
 
       setEditMode(false);
+    } catch (error) {
+      alert(error);
+      console.error("Edit failed:", error);
     } finally {
       setSaving(false);
     }

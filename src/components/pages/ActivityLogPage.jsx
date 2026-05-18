@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ActivitySquare, Filter, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
 import { fetchActivityLogs } from "../../services/api";
 
 const DATE_LOCALE = "en-PH";
@@ -7,129 +7,66 @@ const DATE_LOCALE = "en-PH";
 function formatDate(dateStr) {
   if (!dateStr) return "—";
   return new Date(dateStr).toLocaleString(DATE_LOCALE, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit",
   });
 }
 
-const inputClass =
-  "border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700";
-
-function SectionCard({ title, children, className = "" }) {
-  return (
-    <div
-      className={`rounded-xl overflow-hidden bg-white  ${className}`}
-      style={{
-        border: "1px solid #DCDCDC",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-      }}
-    >
-      <div
-        className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white bg-[#1C61A1]"
-        // style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
-      >
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
+const inputStyle = {
+  border: "1px solid #DCDCDC",
+  borderRadius: 8,
+  padding: "7px 12px",
+  fontSize: "var(--fs-sm)",
+  color: "#20476E",
+  background: "#FFFFFF",
+};
 
 export default function ActivityLogPage({ currentUser }) {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [fadeIn, setFadeIn] = useState(false);
+  const [logs,       setLogs]       = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
+  const [fadeIn,     setFadeIn]     = useState(false);
+  const [page,       setPage]       = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1, limit: 10 });
+  const [filters,    setFilters]    = useState({ taskId: "", from: "", to: "" });
+  const [applied,    setApplied]    = useState({});
 
-  // 🔥 Pagination state
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    totalPages: 1,
-    limit: 10,
-  });
+  const isDevOrQA = currentUser.role === "Developer" || currentUser.role === "QA";
 
-  // Filters
-  const [filters, setFilters] = useState({
-    taskId: "",
-    from: "",
-    to: "",
-  });
-  const [applied, setApplied] = useState({});
+  const load = useCallback(async (activeFilters = {}, pageNum = 1) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params = isDevOrQA
+        ? { ...activeFilters, userId: currentUser.id, page: pageNum, limit: 10 }
+        : { ...activeFilters, page: pageNum, limit: 10 };
+      const clean = Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== "" && v != null),
+      );
+      const result = await fetchActivityLogs(clean);
+      setLogs(result.data);
+      setPagination(result);
+      setPage(result.page);
+      setTimeout(() => setFadeIn(true), 50);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, isDevOrQA]);
 
-  const isDevOrQA =
-    currentUser.role === "Developer" || currentUser.role === "QA";
+  useEffect(() => { load({}, 1); }, [load]);
 
-  // 🔥 Load function (supports pagination + filters)
-  const load = useCallback(
-    async (activeFilters = {}, pageNum = 1) => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const params = isDevOrQA
-          ? {
-              ...activeFilters,
-              userId: currentUser.id,
-              page: pageNum,
-              limit: 10,
-            }
-          : {
-              ...activeFilters,
-              page: pageNum,
-              limit: 10,
-            };
-
-        const clean = Object.fromEntries(
-          Object.entries(params).filter(([, v]) => v !== "" && v != null),
-        );
-
-        const result = await fetchActivityLogs(clean);
-
-        setLogs(result.data);
-        setPagination(result);
-        setPage(result.page);
-
-        setTimeout(() => setFadeIn(true), 50);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [currentUser, isDevOrQA],
-  );
-
-  useEffect(() => {
-    load({}, 1);
-  }, [load]);
-
-  // Apply filters
-  const handleApply = () => {
-    setApplied(filters);
-    load(filters, 1); // reset to page 1
-  };
-
-  // Clear filters
-  const handleClear = () => {
-    setFilters({ taskId: "", from: "", to: "" });
-    setApplied({});
-    load({}, 1);
-  };
-
+  const handleApply = () => { setApplied(filters); load(filters, 1); };
+  const handleClear = () => { setFilters({ taskId: "", from: "", to: "" }); setApplied({}); load({}, 1); };
   const hasFilters = Object.values(applied).some((v) => v !== "");
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-          <p className="text-slate-400 text-xs font-medium tracking-wider uppercase">
-            Loading logs
-          </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 256 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #0078D7", borderTopColor: "transparent", animation: "spin 0.7s linear infinite" }} />
+          <p style={{ fontSize: "var(--fs-xs)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1C61A1" }}>Loading logs</p>
         </div>
       </div>
     );
@@ -145,409 +82,112 @@ export default function ActivityLogPage({ currentUser }) {
         transition: "opacity 0.35s ease, transform 0.35s ease",
       }}
     >
-      {/* Header */}
+      {/* ── Page header ── */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+        <p style={{ fontSize: "var(--fs-xs)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#4f6070", marginBottom: 4 }}>
           Audit Trail
         </p>
-        <h1 className="text-2xl font-black text-slate-800 leading-none">
+        <h1 style={{ fontSize: "var(--fs-xl)", fontWeight: 900, color: "#20476E", lineHeight: 1.1 }}>
           Activity Log
         </h1>
       </div>
 
-      {/* Filters */}
-      <div className="rounded-xl p-4 bg-white flex flex-wrap gap-3 items-end border border-slate-200">
-        <input
-          type="number"
-          placeholder="Task ID"
-          value={filters.taskId}
-          onChange={(e) =>
-            setFilters((p) => ({ ...p, taskId: e.target.value }))
-          }
-          className={inputClass}
-        />
-
-        <input
-          type="date"
-          value={filters.from}
+      {/* ── Filters ── */}
+      <div style={{ background: "#FFFFFF", border: "1px solid #DCDCDC", borderRadius: 12, padding: "12px 16px", display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+        <input type="number" placeholder="Task ID" value={filters.taskId}
+          onChange={(e) => setFilters((p) => ({ ...p, taskId: e.target.value }))}
+          style={{ ...inputStyle, width: 110 }} />
+        <input type="date" value={filters.from}
           onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))}
-          className={inputClass}
-        />
-
-        <input
-          type="date"
-          value={filters.to}
+          style={inputStyle} />
+        <input type="date" value={filters.to}
           onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))}
-          className={inputClass}
-        />
-
-        <button
-          onClick={handleApply}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm flex items-center gap-1"
-        >
-          <Filter size={14} /> Apply
+          style={inputStyle} />
+        <button onClick={handleApply}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, #1C61A1, #0078D7)", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: "var(--fs-sm)", fontWeight: 600, cursor: "pointer" }}>
+          <Filter size={13} /> Apply
         </button>
-
         {hasFilters && (
-          <button
-            onClick={handleClear}
-            className="px-4 py-2 bg-gray-100 rounded-lg text-sm flex items-center gap-1"
-          >
-            <X size={14} /> Clear
+          <button onClick={handleClear}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: "#fee2e2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, padding: "7px 14px", fontSize: "var(--fs-sm)", fontWeight: 600, cursor: "pointer" }}>
+            <X size={13} /> Clear
           </button>
         )}
       </div>
 
-      {/* Table */}
-      <SectionCard title="Activity Logs">
+      {/* ── Table card ── */}
+      <div style={{ background: "#FFFFFF", border: "1px solid #DCDCDC", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+        {/* Card header */}
+        <div style={{ background: "linear-gradient(90deg, #20476E, #1C61A1)", padding: "10px 20px", fontSize: "var(--fs-xs)", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.12em", color: "#fff" }}>
+          Activity Logs
+        </div>
+
         {error ? (
-          <div className="py-10 text-center text-red-400">{error}</div>
+          <div style={{ padding: "40px 0", textAlign: "center", color: "#dc2626", fontSize: "var(--fs-sm)" }}>{error}</div>
         ) : logs.length === 0 ? (
-          <div className="py-10 text-center text-slate-400">
-            No activity found
-          </div>
+          <div style={{ padding: "40px 0", textAlign: "center", color: "#4f6070", fontSize: "var(--fs-sm)" }}>No activity found</div>
         ) : (
           <>
-            <table className="w-full text-sm">
-              <thead className="bg-[#F0F8FF]">
-                <tr className="border-b border-[#DCDCDC]">
-                  <th className="px-5 py-3 text-left text-xs">Task</th>
-                  <th className="px-5 py-3 text-left text-xs">Action</th>
-                  {!isDevOrQA && (
-                    <th className="px-5 py-3 text-left text-xs">User</th>
-                  )}
-                  <th className="px-5 py-3 text-left text-xs">Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {logs.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="border-b border-[#DCDCDC] odd:bg-[#FFFFFF] even:bg-[#F0F8FF]"
-                  >
-                    <td className="px-5 py-3">{log.taskTitle}</td>
-                    <td className="px-5 py-3">{log.action}</td>
-                    {!isDevOrQA && (
-                      <td className="px-5 py-3">{log.userName}</td>
-                    )}
-                    <td className="px-5 py-3">{formatDate(log.createdAt)}</td>
+            <div style={{ overflowX: "auto" }}>
+              <table className="qt-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", color: "#a8ccf0" }}>Task</th>
+                    <th style={{ textAlign: "left", color: "#a8ccf0" }}>Action</th>
+                    {!isDevOrQA && <th style={{ textAlign: "left", color: "#a8ccf0" }}>User</th>}
+                    <th style={{ textAlign: "left", color: "#a8ccf0" }}>Date &amp; Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {logs.map((log, i) => (
+                    <tr key={log.id} style={{ background: i % 2 === 0 ? "#FFFFFF" : "#F0F8FF" }}>
+                      <td style={{ color: "#20476E", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        {log.taskTitle ?? `Task #${log.taskId}`}
+                        <span style={{ marginLeft: 8, fontSize: "var(--fs-xs)", fontWeight: 700, padding: "1px 6px", borderRadius: 999, background: "#e8f4ff", color: "#0078D7", border: "1px solid #0078D730" }}>
+                          #{log.taskId}
+                        </span>
+                      </td>
+                      <td style={{ color: "#4f6070", maxWidth: 320 }}>{log.action}</td>
+                      {!isDevOrQA && (
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {log.userName ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg, #1C61A1, #0078D7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "var(--fs-xs)", fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                                {log.userName.charAt(0).toUpperCase()}
+                              </div>
+                              <span style={{ color: "#20476E" }}>{log.userName}</span>
+                            </div>
+                          ) : (
+                            <span style={{ color: "#DCDCDC", fontStyle: "italic" }}>System</span>
+                          )}
+                        </td>
+                      )}
+                      <td style={{ whiteSpace: "nowrap", color: "#4f6070" }}>{formatDate(log.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-            {/* 🔥 Pagination UI */}
-            <div className="flex justify-between items-center px-5 py-3 text-xs text-slate-500">
-              <span>
-                Page {page} of {pagination.totalPages} • {pagination.total} logs
-              </span>
-
-              <div className="flex gap-2">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => load(applied, page - 1)}
-                  className="px-3 py-1 bg-gray-100 rounded disabled:opacity-50"
-                >
-                  Prev
-                </button>
-
-                <button
-                  disabled={page >= pagination.totalPages}
-                  onClick={() => load(applied, page + 1)}
-                  className="px-3 py-1 bg-gray-100 rounded disabled:opacity-50"
-                >
-                  Next
-                </button>
+            {/* Pagination */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 20px", fontSize: "var(--fs-xs)", color: "#4f6070", borderTop: "1px solid #DCDCDC" }}>
+              <span>Page {page} of {pagination.totalPages} · {pagination.total} logs</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["Prev", "Next"].map((label, idx) => {
+                  const disabled = idx === 0 ? page <= 1 : page >= pagination.totalPages;
+                  return (
+                    <button key={label} disabled={disabled}
+                      onClick={() => load(applied, idx === 0 ? page - 1 : page + 1)}
+                      style={{ padding: "4px 14px", background: "#F0F8FF", border: "1px solid #DCDCDC", borderRadius: 6, fontSize: "var(--fs-xs)", color: disabled ? "#DCDCDC" : "#1C61A1", cursor: disabled ? "not-allowed" : "pointer", fontWeight: 600 }}>
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </>
         )}
-      </SectionCard>
+      </div>
     </div>
   );
 }
-
-// import { useState, useEffect, useCallback } from "react";
-// import { ActivitySquare, Filter, X } from "lucide-react";
-// import { fetchActivityLogs } from "../../services/api";
-
-// const DATE_LOCALE = "en-PH";
-
-// function formatDate(dateStr) {
-//   if (!dateStr) return "—";
-//   return new Date(dateStr).toLocaleString(DATE_LOCALE, {
-//     year:   "numeric",
-//     month:  "short",
-//     day:    "numeric",
-//     hour:   "2-digit",
-//     minute: "2-digit",
-//   });
-// }
-
-// // ── Shared design tokens ──────────────────────────────────────
-
-// const inputClass =
-//   "border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-700";
-
-// function SectionCard({ title, children, className = "" }) {
-//   return (
-//     <div
-//       className={`rounded-xl overflow-hidden bg-white ${className}`}
-//       style={{ border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
-//     >
-//       <div
-//         className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white"
-//         style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
-//       >
-//         {title}
-//       </div>
-//       {children}
-//     </div>
-//   );
-// }
-
-// // ── Main ──────────────────────────────────────────────────────
-
-// export default function ActivityLogPage({ currentUser }) {
-//   const [logs,    setLogs]    = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error,   setError]   = useState(null);
-//   const [fadeIn,  setFadeIn]  = useState(false);
-
-//   // ── Filters ───────────────────────────────────────────────
-//   const [filters, setFilters] = useState({ taskId: "", from: "", to: "" });
-//   const [applied, setApplied] = useState({});
-
-//   const isDevOrQA = currentUser.role === "Developer" || currentUser.role === "QA";
-
-//   // ── Fetch ─────────────────────────────────────────────────
-//   const load = useCallback(async (activeFilters = {}) => {
-//     try {
-//       setLoading(true);
-//       setError(null);
-
-//       // Dev/QA: always scope to their own userId
-//       const params = isDevOrQA
-//         ? { ...activeFilters, userId: currentUser.id }
-//         : activeFilters;
-
-//       // Strip empty values
-//       const clean = Object.fromEntries(
-//         Object.entries(params).filter(([, v]) => v !== "" && v != null)
-//       );
-
-//       const data = await fetchActivityLogs(clean);
-//       setLogs(data);
-//       setTimeout(() => setFadeIn(true), 50);
-//     } catch (err) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, [currentUser, isDevOrQA]);
-
-//   useEffect(() => { load(); }, [load]);
-
-//   // ── Filter handlers ───────────────────────────────────────
-//   const handleApply = () => {
-//     setApplied(filters);
-//     load(filters);
-//   };
-
-//   const handleClear = () => {
-//     setFilters({ taskId: "", from: "", to: "" });
-//     setApplied({});
-//     load({});
-//   };
-
-//   const hasFilters = Object.values(applied).some((v) => v !== "");
-
-//   // ── Render ────────────────────────────────────────────────
-//   if (loading) {
-//     return (
-//       <div className="flex items-center justify-center h-64">
-//         <div className="flex flex-col items-center gap-3">
-//           <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-//           <p className="text-slate-400 text-xs font-medium tracking-wider uppercase">Loading logs</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div
-//       className="space-y-6 pb-10"
-//       style={{
-//         fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif",
-//         opacity: fadeIn ? 1 : 0,
-//         transform: fadeIn ? "translateY(0)" : "translateY(8px)",
-//         transition: "opacity 0.35s ease, transform 0.35s ease",
-//       }}
-//     >
-//       {/* ── Page header ── */}
-//       <div>
-//         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Audit Trail</p>
-//         <h1 className="text-2xl font-black text-slate-800 leading-none">Activity Log</h1>
-//       </div>
-
-//       {/* ── Filters ── */}
-//       <div
-//         className="rounded-xl p-4 bg-white flex flex-wrap gap-3 items-end"
-//         style={{ border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
-//       >
-//         <div className="space-y-1.5">
-//           <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Task ID</label>
-//           <input
-//             type="number"
-//             placeholder="e.g. 3"
-//             value={filters.taskId}
-//             onChange={(e) => setFilters((p) => ({ ...p, taskId: e.target.value }))}
-//             className={inputClass}
-//             style={{ width: "7rem" }}
-//           />
-//         </div>
-
-//         <div className="space-y-1.5">
-//           <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">From</label>
-//           <input
-//             type="date"
-//             value={filters.from}
-//             onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))}
-//             className={inputClass}
-//           />
-//         </div>
-
-//         <div className="space-y-1.5">
-//           <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">To</label>
-//           <input
-//             type="date"
-//             value={filters.to}
-//             onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))}
-//             className={inputClass}
-//           />
-//         </div>
-
-//         <div className="flex gap-2">
-//           <button
-//             onClick={handleApply}
-//             className="flex items-center gap-1.5 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-//             style={{ background: "linear-gradient(135deg, #1e3a5f, #1e40af)", border: "1px solid #1e40af40" }}
-//           >
-//             <Filter size={13} />
-//             Apply
-//           </button>
-//           {hasFilters && (
-//             <button
-//               onClick={handleClear}
-//               className="flex items-center gap-1.5 bg-slate-100 text-slate-600
-//                          px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition"
-//             >
-//               <X size={13} />
-//               Clear
-//             </button>
-//           )}
-//         </div>
-
-//         {hasFilters && (
-//           <div className="ml-auto text-[10px] font-bold uppercase tracking-widest text-slate-400 self-center">
-//             {logs.length} result{logs.length !== 1 ? "s" : ""}
-//           </div>
-//         )}
-//       </div>
-
-//       {/* ── Table ── */}
-//       <SectionCard title={isDevOrQA ? "Your Task Activity" : "Full Project Activity History"}>
-//         {error ? (
-//           <div className="flex items-center justify-center py-16">
-//             <p className="text-sm text-red-400">{error}</p>
-//           </div>
-//         ) : logs.length === 0 ? (
-//           <div className="flex flex-col items-center justify-center py-16 gap-3">
-//             <ActivitySquare size={32} style={{ color: "#cbd5e1" }} />
-//             <p className="text-sm text-slate-400">No activity found</p>
-//           </div>
-//         ) : (
-//           <div className="overflow-x-auto">
-//             <table className="w-full text-sm">
-//               <thead>
-//                 <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-//                   <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">
-//                     Task
-//                   </th>
-//                   <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">
-//                     Action
-//                   </th>
-//                   {!isDevOrQA && (
-//                     <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">
-//                       User
-//                     </th>
-//                   )}
-//                   <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">
-//                     Date & Time
-//                   </th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {logs.map((log, i) => (
-//                   <tr
-//                     key={log.id}
-//                     className="transition-colors hover:bg-slate-50"
-//                     style={{ borderBottom: i < logs.length - 1 ? "1px solid #f8fafc" : "none" }}
-//                   >
-//                     {/* Task */}
-//                     <td className="px-5 py-3.5 whitespace-nowrap">
-//                       <span className="font-semibold text-slate-700">
-//                         {log.taskTitle ?? `Task #${log.taskId}`}
-//                       </span>
-//                       <span
-//                         className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
-//                         style={{ background: "#eff6ff", color: "#3b82f6", border: "1px solid #3b82f630" }}
-//                       >
-//                         #{log.taskId}
-//                       </span>
-//                     </td>
-
-//                     {/* Action */}
-//                     <td className="px-5 py-3.5 text-slate-500 max-w-sm text-xs leading-relaxed">
-//                       {log.action}
-//                     </td>
-
-//                     {/* User */}
-//                     {!isDevOrQA && (
-//                       <td className="px-5 py-3.5 whitespace-nowrap">
-//                         {log.userName ? (
-//                           <div className="flex items-center gap-2">
-//                             <div
-//                               className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-//                               style={{ background: "linear-gradient(135deg, #1e3a5f, #1e40af)" }}
-//                             >
-//                               {log.userName.charAt(0).toUpperCase()}
-//                             </div>
-//                             <span className="text-slate-600 text-xs">{log.userName}</span>
-//                           </div>
-//                         ) : (
-//                           <span className="text-slate-300 italic text-xs">System</span>
-//                         )}
-//                       </td>
-//                     )}
-
-//                     {/* Date */}
-//                     <td className="px-5 py-3.5 whitespace-nowrap">
-//                       <span
-//                         className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider"
-//                         style={{ background: "#f8fafc", color: "#94a3b8", border: "1px solid #e2e8f0" }}
-//                       >
-//                         {formatDate(log.createdAt)}
-//                       </span>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         )}
-//       </SectionCard>
-//     </div>
-//   );
-// }

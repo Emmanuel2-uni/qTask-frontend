@@ -19,32 +19,17 @@ import {
   fetchActivityLogs,
 } from "../../services/api";
 
-// KPI Card Component
 function KpiCard({ label, value, accent, sub, icon: Icon }) {
   return (
     <div
       className="rounded-xl p-4 flex flex-col gap-1 relative overflow-hidden"
-      style={{
-        background: "linear-gradient(135deg, #0f172a 60%, #1e3a5f)",
-        border: `1px solid ${accent}40`,
-      }}
+      style={{ background: `linear-gradient(135deg, #20476E 60%, #1C61A1)`, border: `1px solid ${accent}40` }}
     >
-      <div
-        className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-20 blur-2xl"
-        style={{ background: accent }}
-      />
-      {Icon && (
-        <div className="absolute top-3 right-4 opacity-10">
-          <Icon size={32} color={accent} />
-        </div>
-      )}
-      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-        {label}
-      </span>
-      <span className="text-3xl font-black text-white leading-none">
-        {value}
-      </span>
-      {sub && <span className="text-[10px] text-slate-500 mt-0.5">{sub}</span>}
+      <div className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-20 blur-2xl" style={{ background: accent }} />
+      {Icon && <div className="absolute top-3 right-4 opacity-10"><Icon size={32} color={accent} /></div>}
+      <span className="font-bold uppercase tracking-widest text-slate-300" style={{ fontSize: "var(--fs-xs)" }}>{label}</span>
+      <span className="font-black text-white leading-none" style={{ fontSize: "var(--fs-2xl)" }}>{value}</span>
+      {sub && <span className="text-slate-400 mt-0.5" style={{ fontSize: "var(--fs-xs)" }}>{sub}</span>}
     </div>
   );
 }
@@ -52,16 +37,12 @@ function KpiCard({ label, value, accent, sub, icon: Icon }) {
 // Section Card Component
 function SectionCard({ title, icon, children, action, className = "" }) {
   return (
-    <div
-      className={`rounded-xl overflow-hidden bg-white flex flex-col ${className}`}
-      style={{
-        border: "1px solid #e2e8f0",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-      }}
+    <div className={`rounded-xl overflow-hidden bg-white flex flex-col ${className}`}
+      style={{ border: "1px solid #DCDCDC", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
     >
       <div
-        className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white flex items-center justify-between shrink-0"
-        style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
+        className="px-5 py-3 font-black uppercase tracking-widest text-white flex items-center justify-between shrink-0"
+        style={{ background: "linear-gradient(90deg, #20476E, #1C61A1)", fontSize: "var(--fs-xs)" }}
       >
         <div className="flex items-center gap-2">
           {icon && <span>{icon}</span>}
@@ -168,7 +149,7 @@ function AtRiskProjectCard({ project, onClick }) {
           </p>
           {project.overdueCount > 0 && (
             <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">
-              {project.overdueCount} overdue
+              {project.overdueCount} overdue tasks
             </span>
           )}
         </div>
@@ -316,10 +297,10 @@ export default function DashboardPage({ onNavigate, currentUser }) {
       {/* Page Header & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+      <p style={{ fontSize: "var(--fs-xs)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#4f6070", marginBottom: 4 }}>
             Overview
           </p>
-          <h1 className="text-2xl font-black text-slate-800 leading-none">
+          <h1 style={{ fontSize: "var(--fs-xl)", fontWeight: 900, color: "#20476E", lineHeight: 1.1 }}>
             Dashboard
           </h1>
           <p className="text-xs text-slate-400 mt-1.5">
@@ -350,16 +331,12 @@ export default function DashboardPage({ onNavigate, currentUser }) {
           <button
             onClick={loadDashboardData}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all"
-            style={{
-              background: "#f1f5f9",
-              color: "#64748b",
-              border: "1px solid #e2e8f0",
-            }}
+            style={{ background: "#F0F8FF", color: "#1C61A1", border: "1px solid #DCDCDC" }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#e2e8f0";
+              e.currentTarget.style.background = "#daeeff";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#f1f5f9";
+              e.currentTarget.style.background = "#F0F8FF";
             }}
           >
             <Activity size={14} />

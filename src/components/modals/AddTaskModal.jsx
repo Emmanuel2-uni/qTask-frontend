@@ -94,10 +94,10 @@ export default function AddTaskModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" style={{ border: "1px solid #DCDCDC" }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Add task</h2>
+          <h2 className="font-semibold" style={{ fontSize: "var(--fs-lg)", color: "#20476E" }}>Add task</h2>
           <button
             type="button"
             onClick={onClose}
@@ -119,8 +119,8 @@ export default function AddTaskModal({
               onChange={(e) => set("title", e.target.value)}
               onKeyDown={handleTitleKeyDown}
               placeholder="Task title — press Enter for quick add"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
-              required
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={{ border: "1px solid #DCDCDC", fontSize: "var(--fs-sm)" }}
             />
             {form.title.trim().length > 0 && (
               <p className="text-xs text-blue-500">
@@ -156,25 +156,23 @@ export default function AddTaskModal({
               <select
                 value={form.assigneeId}
                 onChange={(e) => set("assigneeId", e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-blue-400 bg-white"
+                className="w-full rounded-lg px-2 py-2 bg-white"
+                style={{ border: "1px solid #DCDCDC", fontSize: "var(--fs-sm)", color: "#20476E" }}
               >
                 <option value="">Unassigned</option>
                 {devUsers.map((u) => (
-                  <option key={u.userId} value={u.userId ?? u.userId}>
-                    {u.name}
-                  </option>
+                  <option key={u.userId} value={u.userId ?? u.userId}>{u.name}</option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                QA Assignee
-              </label>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">QA Assignee</label>
               <select
                 value={form.qaAssigneeId}
                 onChange={(e) => set("qaAssigneeId", e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-blue-400 bg-white"
+                className="w-full rounded-lg px-2 py-2 bg-white"
+                style={{ border: "1px solid #DCDCDC", fontSize: "var(--fs-sm)", color: "#20476E" }}
               >
                 <option value="">Unassigned</option>
                 {qaUsers.map((u) => (
@@ -243,7 +241,8 @@ export default function AddTaskModal({
             <button
               type="submit"
               disabled={!canSubmit}
-              className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition"
+              style={{ background: "linear-gradient(135deg, #1C61A1, #0078D7)", color: "#fff" }}
             >
               {adding ? "Adding…" : "Add task"}
             </button>

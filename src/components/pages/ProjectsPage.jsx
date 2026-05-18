@@ -26,7 +26,7 @@ function KpiCard({ label, value, accent, sub, icon: Icon }) {
     <div
       className="rounded-xl p-4 flex flex-col gap-1 relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #0f172a 60%, #1e3a5f)",
+        background: "linear-gradient(135deg, #20476E 60%, #1C61A1)",
         border: `1px solid ${accent}40`,
       }}
     >
@@ -55,13 +55,13 @@ function SectionCard({ title, children }) {
     <div
       className="rounded-xl overflow-hidden bg-white"
       style={{
-        border: "1px solid #e2e8f0",
+        border: "1px solid #dcdcdc",
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
       <div
         className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white"
-        style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
+        style={{ background: "linear-gradient(90deg, #20476E, #1C61A1)" }}
       >
         {title}
       </div>
@@ -185,8 +185,8 @@ export default function ProjectsPage({ users }) {
             onClick={() => setAddModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl transition hover:opacity-90"
             style={{
-              background: "linear-gradient(135deg, #1e3a5f, #1e40af)",
-              border: "1px solid #1e40af40",
+              background: "linear-gradient(135deg, #20476E, #1C61A1)",
+              border: "1px solid #1C61A140",
             }}
           >
             <FolderPlus size={15} />

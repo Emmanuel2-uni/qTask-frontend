@@ -11,7 +11,7 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function PhasesPage() {
   const [phases, setPhases] = useState([]);
-  const [statuses, setStatuses] = useState([]);          // ← fetched once, passed down
+  const [statuses, setStatuses] = useState([]); // ← fetched once, passed down
   const [loading, setLoading] = useState(true);
   const [addingTo, setAddingTo] = useState(null);
   const [newPhaseLabel, setNewPhaseLabel] = useState("");
@@ -130,7 +130,7 @@ export default function PhasesPage() {
     >
       {/* Page Header */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+        <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-1">
           Workflow Configuration
         </p>
         <h1 className="text-2xl font-black text-slate-800 leading-none">
@@ -151,7 +151,7 @@ export default function PhasesPage() {
           {/* Section Header */}
           <div
             className="px-5 py-3 flex items-center justify-between"
-            style={{ background: "linear-gradient(90deg, #0f172a, #1e3a5f)" }}
+            style={{ background: "linear-gradient(90deg, #20476E ,#1C61A1)" }}
           >
             <div className="flex items-center gap-2">
               <span style={{ fontSize: 14 }}>{icon}</span>
@@ -205,7 +205,7 @@ export default function PhasesPage() {
                   <PhaseCard
                     key={phase.id}
                     phase={phase}
-                    statuses={statuses}       // ← passed down
+                    statuses={statuses} // ← passed down
                     onDelete={handleDeletePhase}
                     onUpdate={handleUpdatePhase}
                   />
@@ -304,7 +304,9 @@ function PhaseCard({ phase, statuses, onDelete, onUpdate }) {
   const [label, setLabel] = useState(phase.label);
   const [isDefault, setIsDefault] = useState(phase.isDefault === 1);
   const [isFinal, setIsFinal] = useState(phase.isFinal === 1);
-  const [selectedStatusId, setSelectedStatusId] = useState(phase.defaultStatusId ?? null);  // ← new
+  const [selectedStatusId, setSelectedStatusId] = useState(
+    phase.defaultStatusId ?? null,
+  ); // ← new
   const [saving, setSaving] = useState(false);
   const [sortOrderValue, setSortOrderValue] = useState(phase.sortOrder || 0);
   const inputRef = useRef(null);
@@ -316,7 +318,7 @@ function PhaseCard({ phase, statuses, onDelete, onUpdate }) {
       setIsDefault(phase.isDefault === 1);
       setIsFinal(phase.isFinal === 1);
       setSortOrderValue(phase.sortOrder || 0);
-      setSelectedStatusId(phase.defaultStatusId ?? null);         // ← new
+      setSelectedStatusId(phase.defaultStatusId ?? null); // ← new
     }
   }, [phase, editing]);
 
@@ -324,7 +326,7 @@ function PhaseCard({ phase, statuses, onDelete, onUpdate }) {
     setLabel(phase.label);
     setIsDefault(phase.isDefault === 1);
     setIsFinal(phase.isFinal === 1);
-    setSelectedStatusId(phase.defaultStatusId ?? null);           // ← new
+    setSelectedStatusId(phase.defaultStatusId ?? null); // ← new
     setEditing(true);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
@@ -333,7 +335,7 @@ function PhaseCard({ phase, statuses, onDelete, onUpdate }) {
     setLabel(phase.label);
     setIsDefault(phase.isDefault === 1);
     setIsFinal(phase.isFinal === 1);
-    setSelectedStatusId(phase.defaultStatusId ?? null);           // ← new
+    setSelectedStatusId(phase.defaultStatusId ?? null); // ← new
     setEditing(false);
   };
 
@@ -347,14 +349,15 @@ function PhaseCard({ phase, statuses, onDelete, onUpdate }) {
       isFinal: isFinal ? 1 : 0,
       grouping: key,
       sortOrder: sortOrderValue,
-      defaultStatusId: selectedStatusId,                          // ← new (null = cleared)
+      defaultStatusId: selectedStatusId, // ← new (null = cleared)
     });
     setSaving(false);
     setEditing(false);
   };
 
   // Resolve the currently-selected status object for view-mode badge
-  const resolvedStatus = statuses.find((s) => s.id === phase.defaultStatusId) ?? null;  // ← new
+  const resolvedStatus =
+    statuses.find((s) => s.id === phase.defaultStatusId) ?? null; // ← new
 
   // ── View mode ────────────────────────────────────────────
   if (!editing) {
@@ -446,7 +449,11 @@ function PhaseCard({ phase, statuses, onDelete, onUpdate }) {
           {resolvedStatus && (
             <span
               className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569" }}
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                color: "#475569",
+              }}
               title={`Default status: ${resolvedStatus.label}`}
             >
               <span
