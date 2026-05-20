@@ -723,17 +723,19 @@ export default function TaskDetailModal({
                                     </span>
                                   )}
                                 </button>
-                                {/* Delete */}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setConfirmDeleteSubtaskId(subtask.id)
-                                  }
-                                  className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
-                                  title="Delete"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
+                                {/* Delete — only creator or PM */}
+                                {(subtask.creatorId === currentUser?.id || isPM) && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setConfirmDeleteSubtaskId(subtask.id)
+                                    }
+                                    className="text-gray-500 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
                               </>
                             )}
                           </div>
@@ -854,16 +856,18 @@ export default function TaskDetailModal({
                                         </span>
                                       )}
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setConfirmDeleteSubtaskId(subtask.id)
-                                      }
-                                      className="text-gray-400 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
-                                      title="Delete"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
+                                    {(subtask.creatorId === currentUser?.id || isPM ) && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setConfirmDeleteSubtaskId(subtask.id)
+                                        }
+                                        className="text-gray-400 hover:text-red-400 transition-colors text-sm leading-none shrink-0 cursor-pointer"
+                                        title="Delete"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
                                   </>
                                 )}
                               </div>
