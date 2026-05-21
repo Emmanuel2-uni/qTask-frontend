@@ -7,5 +7,17 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     historyApiFallback: true,
+     proxy: {
+      "/api": {
+        target: "http://localhost:5261",
+        changeOrigin: true,
+        ws: true,
+      },
+      "/hubs": {
+        target: "http://localhost:5261",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
 });

@@ -19,6 +19,9 @@ import SettingsPage from "./pages/SettingsPage";
 
 import { getDefaultPage } from "../config/navigation";
 
+import { useBoardSync } from "./hooks/useBoardSync"; // SignalR hook for real-time updates
+import { useSubtaskComments } from "./hooks/useSubtaskComments"; // SignalR hook for real-time updates
+
 import {
   fetchPhases,
   fetchStatuses,
@@ -177,6 +180,17 @@ export default function AppShell({ currentUser, logout }) {
     }
     loadStatic();
   }, [isPM, grouping]);
+
+
+  // SignalR hook to sync board state in real-time across users —
+  //  listens for global events and updates tasks, phases, severities, and statuses accordingly.
+  useBoardSync({
+    activeProjectId,
+    setTasks,
+    setDetailTask,
+    setRenderKey,
+  });
+
 
   // ── Load project users when activeProjectId changes ────────
   // Only fetch when a real project is selected — never with null
@@ -423,7 +437,7 @@ export default function AppShell({ currentUser, logout }) {
           ...formData,
           projectId: activeProjectId,
         });
-        setTasks((prev) => [newTask, ...prev]);
+        // setTasks((prev) => [newTask, ...prev]); //SignalR and the database becomes the source of truth
         setShowAddTask(false);
         setRenderKey((k) => k + 1);
       } catch (err) {
@@ -544,7 +558,7 @@ export default function AppShell({ currentUser, logout }) {
   const handleUpdateSubtasks = useCallback(async (taskId, newSubtasks) => {
     try {
       const updated = await updateSubtasks(taskId, newSubtasks);
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
+      // setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
       // Return the server-assigned subtasks so the modal can re-sync its local state
       return updated.subtasks ?? newSubtasks;
     } catch (err) {

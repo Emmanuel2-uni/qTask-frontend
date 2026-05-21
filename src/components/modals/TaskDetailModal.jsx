@@ -24,6 +24,7 @@ import {
   updateSubtask,
 } from "../../services/api";
 import LinkText from "../ui/LinkText";
+import { useSubtaskComments } from "../hooks/useSubtaskComments";
 
 function normaliseSubtasks(subtasks) {
   return (subtasks ?? []).map((s) => ({
@@ -55,12 +56,15 @@ export default function TaskDetailModal({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [subtaskMode, setSubtaskMode] = useState(false);
-  const [subtaskComments, setSubtaskComments] = useState([]);
-  const [activeSubtaskId, setActiveSubtaskId] = useState(null);
+const [activeSubtaskId, setActiveSubtaskId] = useState(null);
+  // const [subtaskComments, setSubtaskComments] = useState([]); 
+  // const [loadingComments, setLoadingComments] = useState(false);
+
+
   const [commentPanel, setCommentPanel] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [postingComment, setPostingComment] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(false);
+ 
   const [editForm, setEditForm] = useState({
     title: task.title ?? task.name ?? "",
     description: task.description ?? "",
@@ -69,7 +73,7 @@ export default function TaskDetailModal({
     severityId: task.severityId ?? "",
     statusId: task.statusId ?? "",
     startDate: task.startDate ? task.startDate.split("T")[0] : "",
-    targetDate: task.targetDate ? task.targetDate.split("T")[0] : "",
+    targetDate: task.targetDate ? task.targetDate.split("T")[0] : new Date().toISOString().split("T")[0],
   });
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -84,16 +88,32 @@ export default function TaskDetailModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  // Sync localSubtasks when the task prop is updated externally (e.g. SignalR)
+  useEffect(() => {
+    setLocalSubtasks(sortSubtasks(normaliseSubtasks(task.subtasks)));
+  }, [task.subtasks]);
+
+
+
   // ── Comment counts (subtaskId → number) ──────────────────────────────────
   const [commentCounts, setCommentCounts] = useState({});
+  // Fetch counts once on mount
   useEffect(() => {
     const ids = localSubtasks.map((s) => s.id).filter((id) => id > 0);
     if (ids.length === 0) return;
     fetchSubtaskCommentCounts(ids)
       .then(setCommentCounts)
-      .catch(() => {}); // non-critical, badge simply won't show
+      .catch(() => {});
+  }, []); // ← empty deps, runs once
+  // Re-fetch only when a new subtask is added (new id appears that has no count yet)
+  useEffect(() => {
+    const ids = localSubtasks
+      .map((s) => s.id)
+      .filter((id) => id > 0 && !(id in commentCounts)); // ← only genuinely new ones
+    if (ids.length === 0) return;
+    fetchSubtaskCommentCounts(ids)
+      .then((newCounts) => setCommentCounts((prev) => ({ ...prev, ...newCounts })));
   }, [localSubtasks]);
-
   // ── Optimistic local status for the modal's own status pill ──────────────
   const [localStatus, setLocalStatus] = useState({
     label: task.statusLabel ?? null,
@@ -269,7 +289,6 @@ export default function TaskDetailModal({
       setConfirmingDelete(false);
     }
   };
-
   const [confirmUntickId, setConfirmUntickId] = useState(null);
   const [confirmDeleteSubtaskId, setConfirmDeleteSubtaskId] = useState(null);
   const [confirmDeleteCommentId, setConfirmDeleteCommentId] = useState(null);
@@ -324,32 +343,33 @@ export default function TaskDetailModal({
     if (commentPanel && activeSubtaskId === subtask.id) {
       setCommentPanel(false);
       setActiveSubtaskId(null);
-      setSubtaskComments([]);
+      //setSubtaskComments([]);
       return;
     }
     setActiveSubtaskId(subtask.id);
     setCommentPanel(true);
-    setSubtaskComments([]);
-    setLoadingComments(true);
-    try {
-      const comments = await fetchSubtaskComments(subtask.id);
-      setSubtaskComments(comments);
-    } catch (err) {
-      console.error("Failed to load subtask comments:", err.message);
-    } finally {
-      setLoadingComments(false);
-    }
+    // setSubtaskComments([]);
+    // setLoadingComments(true);
+    // try {
+    //   const comments = await fetchSubtaskComments(subtask.id);
+    //   setSubtaskComments(comments);
+    // } catch (err) {
+    //   console.error("Failed to load subtask comments:", err.message);
+    // } finally {
+    //   setLoadingComments(false);
+    // }
   };
 
   const handlePostComment = async () => {
     if (!newComment.trim() || !activeSubtaskId) return;
     setPostingComment(true);
     try {
-      const created = await createSubtaskComment(
-        activeSubtaskId,
-        newComment.trim(),
-      );
-      setSubtaskComments((prev) => [...prev, created]);
+      await createSubtaskComment(activeSubtaskId, newComment.trim());
+      // const created = await createSubtaskComment(
+      //   activeSubtaskId,
+      //   newComment.trim(),
+      // );
+      // setSubtaskComments((prev) => [...prev, created]);
       setCommentCounts((prev) => ({
         ...prev,
         [activeSubtaskId]: (prev[activeSubtaskId] ?? 0) + 1,
@@ -366,7 +386,7 @@ export default function TaskDetailModal({
     if (!activeSubtaskId) return;
     try {
       await deleteSubtaskComment(commentId);
-      setSubtaskComments((prev) => prev.filter((c) => c.id !== commentId));
+      // setSubtaskComments((prev) => prev.filter((c) => c.id !== commentId));
       setCommentCounts((prev) => ({
         ...prev,
         [activeSubtaskId]: Math.max(0, (prev[activeSubtaskId] ?? 1) - 1),
@@ -375,6 +395,11 @@ export default function TaskDetailModal({
       console.error("Failed to delete comment:", err.message);
     }
   };
+
+  // SignalR-powered real-time comments, synced across all clients in the same subtask group
+  const { comments: subtaskComments, setComments: setSubtaskComments, loading: loadingComments }
+  = useSubtaskComments(activeSubtaskId, commentCounts, setCommentCounts);
+
 
   // ── Current logged-in user (for ownership check) ─────────────────────────
   const currentUser = JSON.parse(localStorage.getItem("qtask_user") ?? "null");
@@ -390,11 +415,11 @@ export default function TaskDetailModal({
     try {
       await updateSubtaskComment(commentId, editingCommentText.trim());
       // Patch local state — no refetch needed
-      setSubtaskComments((prev) =>
-        prev.map((c) =>
-          c.id === commentId ? { ...c, comment: editingCommentText.trim() } : c,
-        ),
-      );
+      // setSubtaskComments((prev) =>
+      //   prev.map((c) =>
+      //     c.id === commentId ? { ...c, comment: editingCommentText.trim() } : c,
+      //   ),
+      // );
       setEditingCommentId(null);
       setEditingCommentText("");
     } catch (err) {
