@@ -53,7 +53,7 @@ export function useSubtaskComments(subtaskId, commentCounts, setCommentCounts) {
         setComments((prev) => [...prev, newComment]);
         setCommentCounts((prev) => ({        // ← add this
             ...prev,
-            [subtaskId]: (prev[subtaskId] ?? 0) + 1,
+            [newComment.subtaskId]: (prev[newComment.subtaskId] ?? 0) + 1,
         }));
     });
 
