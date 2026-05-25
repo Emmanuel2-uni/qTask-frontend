@@ -1,12 +1,17 @@
 import TaskCard from "./TaskCard";
 
-export default function KanbanColumn({ col, tasks, colRef, onCardClick }) {
+export default function KanbanColumn({
+  col,
+  tasks,
+  colRef,
+  onCardClick,
+  isDragging,
+}) {
   return (
     <div
-      className="shrink-0 w-60 rounded-xl overflow-hidden flex flex-col"
+      className={`shrink-0 w-60 rounded-xl overflow-hidden flex flex-col min-h-50 ${isDragging ? "max-h-75" : ""}`}
       style={{
-        minHeight: "200px",
-        maxHeight: "400px",
+        // minHeight: "200px",
         background: "#F0F8FF",
         border: `1px solid #DCDCDC`,
         borderTop: `3px solid ${col.color || "#0078D7"}`,

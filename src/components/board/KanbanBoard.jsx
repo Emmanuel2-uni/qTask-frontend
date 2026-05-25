@@ -21,6 +21,7 @@ export default function KanbanBoard({
 
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const updateFades = () => {
     const el = scrollRef.current;
@@ -38,20 +39,50 @@ export default function KanbanBoard({
       const el = colRefs.current[id];
       if (!el || sortablesRef.current[id]) return;
 
+      // sortablesRef.current[id] = Sortable.create(el, {
+      //   group: "kanban",
+      //   animation: 150,
+      //   ghostClass: "sortable-ghost",
+      //   chosenClass: "sortable-chosen",
+      //   onEnd(evt) {
+      //     const { from, to, oldIndex } = evt;
+
+      //     // data-col holds the numeric phase id
+      //     const fromPhaseId = Number(from.dataset.col);
+      //     const toPhaseId = Number(to.dataset.col);
+      //     const taskId = Number(evt.item.dataset.id);
+
+      //     // Revert DOM — React + server are source of truth
+      //     if (fromPhaseId === toPhaseId) {
+      //       from.insertBefore(evt.item, from.children[oldIndex] || null);
+      //     } else {
+      //       to.removeChild(evt.item);
+      //       from.insertBefore(evt.item, from.children[oldIndex] || null);
+      //     }
+
+      //     onDragEnd(fromPhaseId, toPhaseId, taskId);
+      //   },
+      // });
+
       sortablesRef.current[id] = Sortable.create(el, {
         group: "kanban",
         animation: 150,
         ghostClass: "sortable-ghost",
         chosenClass: "sortable-chosen",
+
+        onStart() {
+          setIsDragging(true);
+        },
+
         onEnd(evt) {
+          setIsDragging(false);
+
           const { from, to, oldIndex } = evt;
 
-          // data-col holds the numeric phase id
           const fromPhaseId = Number(from.dataset.col);
           const toPhaseId = Number(to.dataset.col);
           const taskId = Number(evt.item.dataset.id);
 
-          // Revert DOM — React + server are source of truth
           if (fromPhaseId === toPhaseId) {
             from.insertBefore(evt.item, from.children[oldIndex] || null);
           } else {
@@ -144,12 +175,21 @@ export default function KanbanBoard({
           className="kanban-scroll flex gap-3 items-start overflow-x-auto pb-3"
         >
           {columns.map((col) => (
+            // <KanbanColumn
+            //   key={col.id}
+            //   col={col}
+            //   tasks={tasks[col.id] ?? []}
+            //   colRef={(el) => (colRefs.current[col.id] = el)}
+            //   onCardClick={onCardClick}
+            // />
+
             <KanbanColumn
               key={col.id}
               col={col}
               tasks={tasks[col.id] ?? []}
               colRef={(el) => (colRefs.current[col.id] = el)}
               onCardClick={onCardClick}
+              isDragging={isDragging}
             />
           ))}
           <div className="shrink-0 w-4" aria-hidden />
